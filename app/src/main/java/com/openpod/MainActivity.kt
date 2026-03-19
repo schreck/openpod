@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.openpod.ui.podcasts.PodcastListScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -14,8 +16,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                Surface {
-                    Text("OpenPod")
+                val navController = rememberNavController()
+                NavHost(navController, startDestination = "podcasts") {
+                    composable("podcasts") {
+                        PodcastListScreen(
+                            onPodcastClick = { feedUrl ->
+                                navController.navigate("episodes/${feedUrl}")
+                            }
+                        )
+                    }
+                    composable("episodes/{feedUrl}") {
+                        // Step 3
+                    }
                 }
             }
         }
