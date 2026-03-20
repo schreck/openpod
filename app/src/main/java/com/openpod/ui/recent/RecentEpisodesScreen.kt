@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.openpod.data.db.Episode
 import com.openpod.data.db.EpisodeWithPodcast
+import com.openpod.ui.episodes.parseDurationMs
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -117,19 +118,3 @@ private fun formatDate(pubDate: Long): String? {
     return SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(pubDate))
 }
 
-private fun parseDurationMs(duration: String?): Long? {
-    if (duration.isNullOrBlank()) return null
-    val parts = duration.trim().split(":")
-    return when (parts.size) {
-        3 -> parts[0].toLongOrNull()?.let { h ->
-            parts[1].toLongOrNull()?.let { m ->
-                parts[2].toLongOrNull()?.let { s -> (h * 3600 + m * 60 + s) * 1000 }
-            }
-        }
-        2 -> parts[0].toLongOrNull()?.let { m ->
-            parts[1].toLongOrNull()?.let { s -> (m * 60 + s) * 1000 }
-        }
-        1 -> parts[0].toLongOrNull()?.let { it * 1000 }
-        else -> null
-    }
-}
