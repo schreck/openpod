@@ -44,6 +44,14 @@ app/
 2. **Episode List** — episodes for a feed, tap to play
 3. **Player** — persistent mini-player bar (tap to expand), full-screen player with artwork, scrubber, and skip controls
 
+## Testing
+
+```bash
+JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew test
+```
+
+Unit tests live in `app/src/test/`. Currently covers `RssParser`.
+
 ## Build & Install
 
 Requires Java 11+. If the system JDK is older, prefix with `JAVA_HOME`:

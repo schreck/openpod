@@ -53,6 +53,18 @@ This gives background playback and notification/lock screen controls for free.
 7. **Android Auto** — MediaLibraryService browse tree ✓
 8. **Remaining** — download to local storage, playback speed control
 
+## Testing
+
+Run unit tests:
+
+```bash
+JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew test
+```
+
+**When to add tests:** Write unit tests for pure logic that doesn't need Android — parsing, formatting, data transformation. `RssParser` is the main example. Don't test Room DAOs, Compose UI, or ExoPlayer wiring; those require instrumented tests and aren't worth the setup cost for this project.
+
+**Avoid Android deps in tests:** Use `XmlPullParserFactory` instead of `android.util.Xml`, and keep XML fixture strings on a single line (or string concatenation) to avoid `trimIndent()` whitespace bugs with kxml2.
+
 ## Building & Installing
 
 **Java:** The system JDK is Java 8, but AGP 8.5 requires Java 11+. Use the Homebrew OpenJDK 17:
