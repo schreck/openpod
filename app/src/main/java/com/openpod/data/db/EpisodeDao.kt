@@ -14,6 +14,9 @@ interface EpisodeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(episodes: List<Episode>)
 
+    @Query("SELECT playPositionMs FROM episodes WHERE guid = :guid")
+    suspend fun getPlayPosition(guid: String): Long
+
     @Query("UPDATE episodes SET playPositionMs = :position, isPlayed = :isPlayed WHERE guid = :guid")
     suspend fun updateProgress(guid: String, position: Long, isPlayed: Boolean)
 }

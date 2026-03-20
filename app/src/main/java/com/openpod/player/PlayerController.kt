@@ -10,11 +10,17 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import com.openpod.data.db.Episode
+import com.openpod.data.db.EpisodeDao
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,8 +32,11 @@ data class PlayerState(
 
 @Singleton
 class PlayerController @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val episodeDao: EpisodeDao
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
 
@@ -69,17 +78,23 @@ class PlayerController @Inject constructor(
     }
 
     fun playEpisode(episode: Episode) {
-        val item = MediaItem.Builder()
-            .setUri(episode.audioUrl)
-            .setMediaId(episode.guid)
-            .setMediaMetadata(MediaMetadata.Builder().setTitle(episode.title).build())
-            .build()
-        controller?.run {
-            setMediaItem(item)
-            prepare()
-            play()
-        }
         _state.update { it.copy(title = episode.title, isPlaying = true, hasMedia = true) }
+        scope.launch {
+            val savedPosition = withContext(Dispatchers.IO) {
+                episodeDao.getPlayPosition(episode.guid)
+            }
+            val item = MediaItem.Builder()
+                .setUri(episode.audioUrl)
+                .setMediaId(episode.guid)
+                .setMediaMetadata(MediaMetadata.Builder().setTitle(episode.title).build())
+                .build()
+            controller?.run {
+                setMediaItem(item)
+                prepare()
+                if (savedPosition > 0) seekTo(savedPosition)
+                play()
+            }
+        }
     }
 
     fun playPause() {
