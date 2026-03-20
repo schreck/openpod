@@ -19,6 +19,8 @@ class PodcastRepository @Inject constructor(
 ) {
     val podcasts: Flow<List<Podcast>> = podcastDao.getAll()
 
+    fun getEpisodes(feedUrl: String): Flow<List<Episode>> = episodeDao.getForPodcast(feedUrl)
+
     suspend fun addPodcast(feedUrl: String) {
         val feed = parser.parse(fetcher.fetch(feedUrl))
         podcastDao.insert(Podcast(
