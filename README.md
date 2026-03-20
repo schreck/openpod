@@ -40,8 +40,10 @@ app/
 
 ## Screens
 
-1. **Podcast List** — subscribed feeds
-2. **Episode List** — episodes for a feed, tap to play
+1. **Home** — two tabs:
+   - *Podcasts* — subscribed feeds, add by RSS URL
+   - *Recent* — latest 100 episodes across all feeds, ordered by date
+2. **Episode List** — episodes for a feed; progress bar shows not started / in progress / finished
 3. **Player** — persistent mini-player bar (tap to expand), full-screen player with artwork, scrubber, and skip controls
 
 ## Testing
@@ -50,7 +52,7 @@ app/
 JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew test
 ```
 
-Unit tests live in `app/src/test/`. Currently covers `RssParser`.
+Unit tests live in `app/src/test/`. Currently covers `RssParser` and `parseDurationMs`.
 
 ## Build & Install
 

@@ -30,9 +30,11 @@ app/src/main/java/com/openpod/
 │   └── repository/  # PodcastRepository, EpisodeRepository
 ├── player/          # PlaybackService (MediaSessionService), PlayerController
 ├── ui/
-│   ├── podcasts/    # PodcastListScreen, PodcastListViewModel
-│   ├── episodes/    # EpisodeListScreen, EpisodeListViewModel
-│   └── player/      # MiniPlayer composable, PlayerScreen, PlayerViewModel
+│   ├── home/        # HomeScreen (TabRow: Podcasts + Recent)
+│   ├── podcasts/    # PodcastListContent, PodcastListViewModel
+│   ├── episodes/    # EpisodeListScreen, EpisodeListViewModel, EpisodeProgress
+│   ├── recent/      # RecentEpisodesScreen, RecentEpisodesViewModel
+│   └── player/      # MiniPlayerBar, PlayerScreen, PlayerViewModel
 └── MainActivity.kt  # Single activity, NavHost
 ```
 
