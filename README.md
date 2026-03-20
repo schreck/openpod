@@ -15,9 +15,10 @@ A simple, no-frills podcast app for Android.
 
 - Subscribe to any podcast by RSS feed URL
 - Browse and play episodes
-- Background playback with notification controls
+- Background playback with notification and lock screen controls
 - Resume from last position
-- Download episodes for offline listening
+- Full-screen player with artwork, scrubber, and skip controls
+- Android Auto support
 
 ## Architecture
 
@@ -39,12 +40,20 @@ app/
 
 ## Screens
 
-1. **Podcast List** — subscribed feeds, pull-to-refresh
-2. **Episode List** — episodes for a feed, play/download actions
-3. **Player** — persistent mini-player, expandable to full player with seek, speed control, and 30s skip
+1. **Podcast List** — subscribed feeds
+2. **Episode List** — episodes for a feed, tap to play
+3. **Player** — persistent mini-player bar (tap to expand), full-screen player with artwork, scrubber, and skip controls
 
-## Build
+## Build & Install
+
+Requires Java 11+. If the system JDK is older, prefix with `JAVA_HOME`:
 
 ```bash
-./gradlew assembleDebug
+JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew installDebug
+```
+
+Check connected devices first:
+
+```bash
+/opt/homebrew/share/android-commandlinetools/platform-tools/adb devices
 ```

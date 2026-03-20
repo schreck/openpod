@@ -44,11 +44,14 @@ This gives background playback and notification/lock screen controls for free.
 
 ## Build Phases
 
-1. **Foundation** — Gradle setup, Room schema, Hilt wiring, navigation skeleton
-2. **RSS + Podcast list** — add feed by URL, fetch + parse + persist, display list
-3. **Episode list** — list episodes per feed, mark played
-4. **Playback** — ExoPlayer service, mini-player bar, seek/skip 30s
-5. **Polish** — download to local storage, playback speed, resume position
+1. **Foundation** — Gradle setup, Room schema, Hilt wiring, navigation skeleton ✓
+2. **RSS + Podcast list** — add feed by URL, fetch + parse + persist, display list ✓
+3. **Episode list** — list episodes per feed, mark played ✓
+4. **Playback** — ExoPlayer service, mini-player bar, seek/skip 30s ✓
+5. **Resume position** — save and restore play position per episode ✓
+6. **Full-screen player** — artwork, scrubber, time labels, skip controls ✓
+7. **Android Auto** — MediaLibraryService browse tree ✓
+8. **Remaining** — download to local storage, playback speed control
 
 ## Building & Installing
 
