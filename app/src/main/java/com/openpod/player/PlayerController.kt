@@ -11,10 +11,13 @@ import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import com.openpod.data.db.Episode
 import com.openpod.data.db.EpisodeDao
+import com.openpod.data.db.PodcastDao
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,19 +29,24 @@ import javax.inject.Singleton
 
 data class PlayerState(
     val title: String? = null,
+    val artworkUrl: String? = null,
     val isPlaying: Boolean = false,
-    val hasMedia: Boolean = false
+    val hasMedia: Boolean = false,
+    val positionMs: Long = 0L,
+    val durationMs: Long = 0L
 )
 
 @Singleton
 class PlayerController @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val episodeDao: EpisodeDao
+    private val episodeDao: EpisodeDao,
+    private val podcastDao: PodcastDao
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
+    private var positionJob: Job? = null
 
     private val _state = MutableStateFlow(PlayerState())
     val state: StateFlow<PlayerState> = _state.asStateFlow()
@@ -46,6 +54,7 @@ class PlayerController @Inject constructor(
     private val listener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _state.update { it.copy(isPlaying = isPlaying) }
+            if (isPlaying) startPositionUpdates() else stopPositionUpdates()
         }
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             _state.update { it.copy(
@@ -53,6 +62,36 @@ class PlayerController @Inject constructor(
                 hasMedia = mediaItem != null
             )}
         }
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            val c = controller ?: return
+            if (playbackState == Player.STATE_READY) {
+                _state.update { it.copy(
+                    durationMs = c.duration.coerceAtLeast(0),
+                    positionMs = c.currentPosition.coerceAtLeast(0)
+                )}
+            }
+        }
+    }
+
+    private fun startPositionUpdates() {
+        positionJob?.cancel()
+        positionJob = scope.launch {
+            while (true) {
+                val c = controller
+                if (c != null) {
+                    _state.update { it.copy(
+                        positionMs = c.currentPosition.coerceAtLeast(0),
+                        durationMs = c.duration.coerceAtLeast(0).takeIf { d -> d > 0 } ?: it.durationMs
+                    )}
+                }
+                delay(500)
+            }
+        }
+    }
+
+    private fun stopPositionUpdates() {
+        positionJob?.cancel()
+        positionJob = null
     }
 
     fun connect() {
@@ -64,13 +103,17 @@ class PlayerController @Inject constructor(
                 _state.update { PlayerState(
                     title = c.mediaMetadata.title?.toString(),
                     isPlaying = c.isPlaying,
-                    hasMedia = c.mediaItemCount > 0
+                    hasMedia = c.mediaItemCount > 0,
+                    positionMs = c.currentPosition.coerceAtLeast(0),
+                    durationMs = c.duration.coerceAtLeast(0)
                 )}
+                if (c.isPlaying) startPositionUpdates()
             }
         }, ContextCompat.getMainExecutor(context))
     }
 
     fun release() {
+        stopPositionUpdates()
         controller?.removeListener(listener)
         controllerFuture?.let { MediaController.releaseFuture(it) }
         controllerFuture = null
@@ -80,13 +123,19 @@ class PlayerController @Inject constructor(
     fun playEpisode(episode: Episode) {
         _state.update { it.copy(title = episode.title, isPlaying = true, hasMedia = true) }
         scope.launch {
-            val savedPosition = withContext(Dispatchers.IO) {
-                episodeDao.getPlayPosition(episode.guid)
+            val (savedPosition, artworkUrl) = withContext(Dispatchers.IO) {
+                val pos = episodeDao.getPlayPosition(episode.guid)
+                val artwork = podcastDao.getByFeedUrl(episode.podcastFeedUrl)?.artworkUrl
+                pos to artwork
             }
+            _state.update { it.copy(artworkUrl = artworkUrl) }
             val item = MediaItem.Builder()
                 .setUri(episode.audioUrl)
                 .setMediaId(episode.guid)
-                .setMediaMetadata(MediaMetadata.Builder().setTitle(episode.title).build())
+                .setMediaMetadata(MediaMetadata.Builder()
+                    .setTitle(episode.title)
+                    .setArtworkUri(artworkUrl?.let { android.net.Uri.parse(it) })
+                    .build())
                 .build()
             controller?.run {
                 setMediaItem(item)
@@ -99,6 +148,11 @@ class PlayerController @Inject constructor(
 
     fun playPause() {
         controller?.let { if (it.isPlaying) it.pause() else it.play() }
+    }
+
+    fun seekTo(positionMs: Long) {
+        controller?.seekTo(positionMs)
+        _state.update { it.copy(positionMs = positionMs) }
     }
 
     fun seekForward() { controller?.seekForward() }

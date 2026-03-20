@@ -50,6 +50,22 @@ This gives background playback and notification/lock screen controls for free.
 4. **Playback** — ExoPlayer service, mini-player bar, seek/skip 30s
 5. **Polish** — download to local storage, playback speed, resume position
 
+## Building & Installing
+
+**Java:** The system JDK is Java 8, but AGP 8.5 requires Java 11+. Use the Homebrew OpenJDK 17:
+
+```bash
+JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew installDebug
+```
+
+**ADB:** Not on PATH — use the full path:
+
+```bash
+/opt/homebrew/share/android-commandlinetools/platform-tools/adb devices
+```
+
+Check for connected devices first. Phones show up when connected via USB with USB debugging enabled.
+
 ## Conventions
 
 - One `ViewModel` per screen

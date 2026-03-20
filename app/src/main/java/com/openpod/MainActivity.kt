@@ -20,6 +20,7 @@ import androidx.navigation.navArgument
 import com.openpod.player.PlayerController
 import com.openpod.ui.episodes.EpisodeListScreen
 import com.openpod.ui.player.MiniPlayerBar
+import com.openpod.ui.player.PlayerScreen
 import com.openpod.ui.player.PlayerViewModel
 import com.openpod.ui.podcasts.PodcastListScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -67,13 +68,17 @@ class MainActivity : ComponentActivity() {
                                     onPlayEpisode = { episode -> playerController.playEpisode(episode) }
                                 )
                             }
+                            composable("player") {
+                                PlayerScreen(onBack = { navController.popBackStack() })
+                            }
                         }
                     }
                     if (playerState.hasMedia) {
                         MiniPlayerBar(
                             state = playerState,
                             onPlayPause = playerViewModel::playPause,
-                            onSeekForward = playerViewModel::seekForward
+                            onSeekForward = playerViewModel::seekForward,
+                            onExpand = { navController.navigate("player") }
                         )
                     }
                 }

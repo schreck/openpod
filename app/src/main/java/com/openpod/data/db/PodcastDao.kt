@@ -18,6 +18,9 @@ interface PodcastDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(podcast: Podcast)
 
+    @Query("SELECT * FROM podcasts WHERE feedUrl = :feedUrl LIMIT 1")
+    suspend fun getByFeedUrl(feedUrl: String): Podcast?
+
     @Delete
     suspend fun delete(podcast: Podcast)
 }

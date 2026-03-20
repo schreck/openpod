@@ -1,5 +1,6 @@
 package com.openpod.ui.player
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,10 +25,11 @@ fun MiniPlayerBar(
     state: PlayerState,
     onPlayPause: () -> Unit,
     onSeekForward: () -> Unit,
+    onExpand: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().clickable(onClick = onExpand),
         tonalElevation = 8.dp,
         shadowElevation = 8.dp
     ) {
