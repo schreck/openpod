@@ -1,7 +1,7 @@
 package com.openpod.data.network
 
-import android.util.Xml
 import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserFactory
 import java.io.StringReader
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -26,7 +26,7 @@ data class ParsedEpisode(
 class RssParser @Inject constructor() {
 
     fun parse(xml: String): ParsedFeed {
-        val parser = Xml.newPullParser()
+        val parser = XmlPullParserFactory.newInstance().newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
         parser.setInput(StringReader(xml))
 
