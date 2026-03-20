@@ -16,15 +16,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -35,37 +32,27 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.openpod.data.db.Podcast
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PodcastListScreen(
+fun PodcastListContent(
     onPodcastClick: (String) -> Unit,
     viewModel: PodcastListViewModel = hiltViewModel()
 ) {
     val podcasts by viewModel.podcasts.collectAsStateWithLifecycle()
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("OpenPod") }) }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            AddFeedRow(
-                url = viewModel.feedUrlInput,
-                isLoading = viewModel.isLoading,
-                onUrlChange = viewModel::onFeedUrlChange,
-                onAdd = viewModel::addPodcast
-            )
-
-            LazyColumn {
-                items(podcasts, key = { it.feedUrl }) { podcast ->
-                    PodcastItem(
-                        podcast = podcast,
-                        onClick = { onPodcastClick(podcast.feedUrl) },
-                        onDelete = { viewModel.deletePodcast(podcast) }
-                    )
-                }
+    Column(modifier = Modifier.fillMaxSize()) {
+        AddFeedRow(
+            url = viewModel.feedUrlInput,
+            isLoading = viewModel.isLoading,
+            onUrlChange = viewModel::onFeedUrlChange,
+            onAdd = viewModel::addPodcast
+        )
+        LazyColumn {
+            items(podcasts, key = { it.feedUrl }) { podcast ->
+                PodcastItem(
+                    podcast = podcast,
+                    onClick = { onPodcastClick(podcast.feedUrl) },
+                    onDelete = { viewModel.deletePodcast(podcast) }
+                )
             }
         }
     }

@@ -2,6 +2,7 @@ package com.openpod.data.repository
 
 import com.openpod.data.db.Episode
 import com.openpod.data.db.EpisodeDao
+import com.openpod.data.db.EpisodeWithPodcast
 import com.openpod.data.db.Podcast
 import com.openpod.data.db.PodcastDao
 import com.openpod.data.network.RssFetcher
@@ -20,6 +21,8 @@ class PodcastRepository @Inject constructor(
     val podcasts: Flow<List<Podcast>> = podcastDao.getAll()
 
     fun getEpisodes(feedUrl: String): Flow<List<Episode>> = episodeDao.getForPodcast(feedUrl)
+
+    fun getRecentEpisodes(): Flow<List<EpisodeWithPodcast>> = episodeDao.getAllRecent()
 
     suspend fun addPodcast(feedUrl: String) {
         val feed = parser.parse(fetcher.fetch(feedUrl))

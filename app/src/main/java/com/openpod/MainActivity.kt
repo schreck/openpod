@@ -19,10 +19,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.openpod.player.PlayerController
 import com.openpod.ui.episodes.EpisodeListScreen
+import com.openpod.ui.home.HomeScreen
 import com.openpod.ui.player.MiniPlayerBar
 import com.openpod.ui.player.PlayerScreen
 import com.openpod.ui.player.PlayerViewModel
-import com.openpod.ui.podcasts.PodcastListScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -51,11 +51,14 @@ class MainActivity : ComponentActivity() {
 
                 Column(modifier = Modifier.fillMaxSize()) {
                     Box(modifier = Modifier.weight(1f)) {
-                        NavHost(navController, startDestination = "podcasts") {
-                            composable("podcasts") {
-                                PodcastListScreen(
+                        NavHost(navController, startDestination = "home") {
+                            composable("home") {
+                                HomeScreen(
                                     onPodcastClick = { feedUrl ->
                                         navController.navigate("episodes/${Uri.encode(feedUrl)}")
+                                    },
+                                    onPlayEpisode = { episode ->
+                                        playerController.playEpisode(episode)
                                     }
                                 )
                             }

@@ -1,13 +1,30 @@
 package com.openpod.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
+data class EpisodeWithPodcast(
+    @Embedded val episode: Episode,
+    @ColumnInfo(name = "podcastTitle") val podcastTitle: String,
+    @ColumnInfo(name = "podcastArtworkUrl") val podcastArtworkUrl: String?
+)
+
 @Dao
 interface EpisodeDao {
+    @Query("""
+        SELECT episodes.*, podcasts.title as podcastTitle, podcasts.artworkUrl as podcastArtworkUrl
+        FROM episodes
+        JOIN podcasts ON episodes.podcastFeedUrl = podcasts.feedUrl
+        ORDER BY episodes.pubDate DESC
+        LIMIT 100
+    """)
+    fun getAllRecent(): Flow<List<EpisodeWithPodcast>>
+
     @Query("SELECT * FROM episodes WHERE podcastFeedUrl = :feedUrl ORDER BY pubDate DESC")
     fun getForPodcast(feedUrl: String): Flow<List<Episode>>
 
