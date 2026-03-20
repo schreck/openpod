@@ -11,6 +11,12 @@ interface EpisodeDao {
     @Query("SELECT * FROM episodes WHERE podcastFeedUrl = :feedUrl ORDER BY pubDate DESC")
     fun getForPodcast(feedUrl: String): Flow<List<Episode>>
 
+    @Query("SELECT * FROM episodes WHERE podcastFeedUrl = :feedUrl ORDER BY pubDate DESC")
+    suspend fun getForPodcastOnce(feedUrl: String): List<Episode>
+
+    @Query("SELECT * FROM episodes WHERE guid = :guid LIMIT 1")
+    suspend fun getByGuid(guid: String): Episode?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(episodes: List<Episode>)
 

@@ -12,6 +12,9 @@ interface PodcastDao {
     @Query("SELECT * FROM podcasts ORDER BY title ASC")
     fun getAll(): Flow<List<Podcast>>
 
+    @Query("SELECT * FROM podcasts ORDER BY title ASC")
+    suspend fun getAllOnce(): List<Podcast>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(podcast: Podcast)
 
