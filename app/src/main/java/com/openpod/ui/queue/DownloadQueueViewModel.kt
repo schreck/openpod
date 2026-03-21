@@ -3,6 +3,7 @@ package com.openpod.ui.queue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openpod.data.db.EpisodeWithPodcast
+import com.openpod.data.download.DownloadProgress
 import com.openpod.data.download.DownloadRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,7 +16,7 @@ class DownloadQueueViewModel @Inject constructor(
     private val downloadRepository: DownloadRepository
 ) : ViewModel() {
 
-    val queue: StateFlow<List<Pair<EpisodeWithPodcast, Float>>> =
+    val queue: StateFlow<List<Pair<EpisodeWithPodcast, DownloadProgress>>> =
         downloadRepository.getQueueWithProgress()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

@@ -1,5 +1,6 @@
 package com.openpod.ui.queue
 
+import android.app.DownloadManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.openpod.data.db.EpisodeWithPodcast
+import com.openpod.data.download.DownloadProgress
 
 @Composable
 fun DownloadQueueContent(viewModel: DownloadQueueViewModel = hiltViewModel()) {
@@ -46,7 +48,7 @@ fun DownloadQueueContent(viewModel: DownloadQueueViewModel = hiltViewModel()) {
     } else {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(queue, key = { it.first.episode.guid }) { (ewp, progress) ->
-                QueueItem(ewp = ewp, progress = progress, onCancel = { viewModel.cancel(ewp) })
+                QueueItem(ewp = ewp, downloadProgress = progress, onCancel = { viewModel.cancel(ewp) })
                 HorizontalDivider()
             }
         }
@@ -54,7 +56,12 @@ fun DownloadQueueContent(viewModel: DownloadQueueViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun QueueItem(ewp: EpisodeWithPodcast, progress: Float, onCancel: () -> Unit) {
+private fun QueueItem(ewp: EpisodeWithPodcast, downloadProgress: DownloadProgress, onCancel: () -> Unit) {
+    val statusLabel = when (downloadProgress.status) {
+        DownloadManager.STATUS_RUNNING -> "${(downloadProgress.fraction * 100).toInt()}%"
+        DownloadManager.STATUS_PAUSED -> "Paused"
+        else -> "Queued"
+    }
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -82,7 +89,7 @@ private fun QueueItem(ewp: EpisodeWithPodcast, progress: Float, onCancel: () -> 
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = ewp.podcastTitle,
+                    text = "${ewp.podcastTitle} · $statusLabel",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
@@ -92,10 +99,17 @@ private fun QueueItem(ewp: EpisodeWithPodcast, progress: Float, onCancel: () -> 
                 Icon(Icons.Default.Close, contentDescription = "Cancel download")
             }
         }
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxWidth().height(2.dp),
-            trackColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        if (downloadProgress.status == DownloadManager.STATUS_RUNNING && downloadProgress.fraction > 0f) {
+            LinearProgressIndicator(
+                progress = { downloadProgress.fraction },
+                modifier = Modifier.fillMaxWidth().height(2.dp),
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        } else {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth().height(2.dp),
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        }
     }
 }

@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
+data class DownloadProgress(val status: Int, val fraction: Float)
+
 @Singleton
 class DownloadRepository @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -42,21 +44,23 @@ class DownloadRepository @Inject constructor(
         scope.launch { episodeDao.updateDownloadId(episode.guid, -1L) }
     }
 
-    fun getProgress(downloadId: Long): Float {
+    fun getDownloadProgress(downloadId: Long): DownloadProgress {
         val cursor = dm.query(DownloadManager.Query().setFilterById(downloadId))
         return cursor.use {
-            if (!it.moveToFirst()) return@use 0f
+            if (!it.moveToFirst()) return@use DownloadProgress(DownloadManager.STATUS_PENDING, 0f)
+            val status = it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
             val downloaded = it.getLong(it.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
             val total = it.getLong(it.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
-            if (total > 0) (downloaded.toFloat() / total).coerceIn(0f, 1f) else 0f
+            val fraction = if (total > 0) (downloaded.toFloat() / total).coerceIn(0f, 1f) else 0f
+            DownloadProgress(status, fraction)
         }
     }
 
     private fun ticker() = flow { while (true) { emit(Unit); delay(1_000) } }
 
-    fun getQueueWithProgress(): Flow<List<Pair<EpisodeWithPodcast, Float>>> =
+    fun getQueueWithProgress(): Flow<List<Pair<EpisodeWithPodcast, DownloadProgress>>> =
         combine(episodeDao.getQueued(), ticker()) { episodes, _ ->
-            episodes.map { ewp -> ewp to getProgress(ewp.episode.downloadId) }
+            episodes.map { ewp -> ewp to getDownloadProgress(ewp.episode.downloadId) }
         }
 
     fun getDownloaded(): Flow<List<EpisodeWithPodcast>> = episodeDao.getDownloaded()
