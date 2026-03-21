@@ -1,6 +1,5 @@
 package com.openpod.ui.queue
 
-import android.app.DownloadManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,8 +30,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.openpod.data.db.EpisodeWithPodcast
-import com.openpod.data.download.DownloadProgress
-import com.openpod.data.download.STATUS_NOT_FOUND
 
 @Composable
 fun DownloadQueueContent(viewModel: DownloadQueueViewModel = hiltViewModel()) {
@@ -49,7 +46,7 @@ fun DownloadQueueContent(viewModel: DownloadQueueViewModel = hiltViewModel()) {
     } else {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(queue, key = { it.first.episode.guid }) { (ewp, progress) ->
-                QueueItem(ewp = ewp, downloadProgress = progress, onCancel = { viewModel.cancel(ewp) })
+                QueueItem(ewp = ewp, progress = progress, onCancel = { viewModel.cancel(ewp) })
                 HorizontalDivider()
             }
         }
@@ -57,13 +54,8 @@ fun DownloadQueueContent(viewModel: DownloadQueueViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun QueueItem(ewp: EpisodeWithPodcast, downloadProgress: DownloadProgress, onCancel: () -> Unit) {
-    val statusLabel = when (downloadProgress.status) {
-        DownloadManager.STATUS_RUNNING -> "${(downloadProgress.fraction * 100).toInt()}%"
-        DownloadManager.STATUS_PAUSED -> "Paused"
-        DownloadManager.STATUS_FAILED, STATUS_NOT_FOUND -> "Failed"
-        else -> "Queued"
-    }
+private fun QueueItem(ewp: EpisodeWithPodcast, progress: Float, onCancel: () -> Unit) {
+    val statusLabel = if (progress > 0f) "${(progress * 100).toInt()}%" else "Queued"
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -101,9 +93,9 @@ private fun QueueItem(ewp: EpisodeWithPodcast, downloadProgress: DownloadProgres
                 Icon(Icons.Default.Close, contentDescription = "Cancel download")
             }
         }
-        if (downloadProgress.status == DownloadManager.STATUS_RUNNING && downloadProgress.fraction > 0f) {
+        if (progress > 0f) {
             LinearProgressIndicator(
-                progress = { downloadProgress.fraction },
+                progress = { progress },
                 modifier = Modifier.fillMaxWidth().height(2.dp),
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
