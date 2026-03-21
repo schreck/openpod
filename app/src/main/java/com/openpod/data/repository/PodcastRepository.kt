@@ -48,5 +48,26 @@ class PodcastRepository @Inject constructor(
         })
     }
 
+    suspend fun refreshAll() {
+        podcastDao.getAllOnce().forEach { podcast ->
+            try {
+                val feed = parser.parse(fetcher.fetch(podcast.feedUrl))
+                episodeDao.insertAll(feed.episodes.map { ep ->
+                    Episode(
+                        guid = ep.guid,
+                        podcastFeedUrl = podcast.feedUrl,
+                        title = ep.title,
+                        description = ep.description,
+                        audioUrl = ep.audioUrl,
+                        duration = ep.duration,
+                        pubDate = ep.pubDate
+                    )
+                })
+            } catch (_: Exception) {
+                // skip failed feeds silently
+            }
+        }
+    }
+
     suspend fun deletePodcast(podcast: Podcast) = podcastDao.delete(podcast)
 }

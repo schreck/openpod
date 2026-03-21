@@ -3,6 +3,8 @@ package com.openpod.ui.recent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,6 +39,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecentEpisodesContent(
     onPlayEpisode: (Episode) -> Unit,
@@ -44,15 +47,21 @@ fun RecentEpisodesContent(
 ) {
     val episodes by viewModel.episodes.collectAsStateWithLifecycle()
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(episodes, key = { it.episode.guid }) { item ->
-            RecentEpisodeItem(
-                item = item,
-                onPlay = { onPlayEpisode(item.episode) },
-                onDownload = { viewModel.download(item.episode) },
-                onCancelDownload = { viewModel.cancelDownload(item.episode) }
-            )
-            HorizontalDivider()
+    PullToRefreshBox(
+        isRefreshing = viewModel.isRefreshing,
+        onRefresh = viewModel::refresh,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(episodes, key = { it.episode.guid }) { item ->
+                RecentEpisodeItem(
+                    item = item,
+                    onPlay = { onPlayEpisode(item.episode) },
+                    onDownload = { viewModel.download(item.episode) },
+                    onCancelDownload = { viewModel.cancelDownload(item.episode) }
+                )
+                HorizontalDivider()
+            }
         }
     }
 }
