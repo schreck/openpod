@@ -26,5 +26,6 @@ data class Episode(
     val playPositionMs: Long = 0L,
     val isPlayed: Boolean = false,
     val lastPlayedAt: Long = 0L,
+    val downloadId: Long = -1L,
     val localFilePath: String? = null
 )

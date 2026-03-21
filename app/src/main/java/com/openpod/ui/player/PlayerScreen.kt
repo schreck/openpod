@@ -113,6 +113,12 @@ private fun PlayerScreenContent(
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
+        Text(
+            text = if (state.isLocal) "Local file" else "Streaming",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp)
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 

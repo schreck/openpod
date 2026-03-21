@@ -2,7 +2,9 @@ package com.openpod.ui.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.openpod.data.db.Episode
 import com.openpod.data.db.EpisodeWithPodcast
+import com.openpod.data.download.DownloadRepository
 import com.openpod.data.repository.PodcastRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -12,8 +14,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlayHistoryViewModel @Inject constructor(
-    repository: PodcastRepository
+    repository: PodcastRepository,
+    private val downloadRepository: DownloadRepository
 ) : ViewModel() {
     val episodes: StateFlow<List<EpisodeWithPodcast>> = repository.getPlayHistory()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun download(episode: Episode) = downloadRepository.enqueue(episode)
+    fun cancelDownload(episode: Episode) = downloadRepository.cancel(episode)
 }

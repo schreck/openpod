@@ -31,6 +31,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.openpod.data.db.Episode
 import com.openpod.data.db.EpisodeWithPodcast
+import com.openpod.ui.common.DownloadButton
 import com.openpod.ui.episodes.parseDurationMs
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -45,14 +46,24 @@ fun RecentEpisodesContent(
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(episodes, key = { it.episode.guid }) { item ->
-            RecentEpisodeItem(item = item, onPlay = { onPlayEpisode(item.episode) })
+            RecentEpisodeItem(
+                item = item,
+                onPlay = { onPlayEpisode(item.episode) },
+                onDownload = { viewModel.download(item.episode) },
+                onCancelDownload = { viewModel.cancelDownload(item.episode) }
+            )
             HorizontalDivider()
         }
     }
 }
 
 @Composable
-private fun RecentEpisodeItem(item: EpisodeWithPodcast, onPlay: () -> Unit) {
+private fun RecentEpisodeItem(
+    item: EpisodeWithPodcast,
+    onPlay: () -> Unit,
+    onDownload: () -> Unit,
+    onCancelDownload: () -> Unit
+) {
     val episode = item.episode
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -88,6 +99,7 @@ private fun RecentEpisodeItem(item: EpisodeWithPodcast, onPlay: () -> Unit) {
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
+            DownloadButton(episode = episode, onDownload = onDownload, onCancel = onCancelDownload)
             IconButton(onClick = onPlay) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Play")
             }

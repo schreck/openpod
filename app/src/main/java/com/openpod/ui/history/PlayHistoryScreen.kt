@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.openpod.data.db.Episode
 import com.openpod.data.db.EpisodeWithPodcast
+import com.openpod.ui.common.DownloadButton
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -51,7 +52,12 @@ fun PlayHistoryContent(
     } else {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(episodes, key = { it.episode.guid }) { item ->
-                PlayHistoryItem(item = item, onPlay = { onPlayEpisode(item.episode) })
+                PlayHistoryItem(
+                    item = item,
+                    onPlay = { onPlayEpisode(item.episode) },
+                    onDownload = { viewModel.download(item.episode) },
+                    onCancelDownload = { viewModel.cancelDownload(item.episode) }
+                )
                 HorizontalDivider()
             }
         }
@@ -59,7 +65,12 @@ fun PlayHistoryContent(
 }
 
 @Composable
-private fun PlayHistoryItem(item: EpisodeWithPodcast, onPlay: () -> Unit) {
+private fun PlayHistoryItem(
+    item: EpisodeWithPodcast,
+    onPlay: () -> Unit,
+    onDownload: () -> Unit,
+    onCancelDownload: () -> Unit
+) {
     val episode = item.episode
     Row(
         modifier = Modifier
@@ -94,6 +105,7 @@ private fun PlayHistoryItem(item: EpisodeWithPodcast, onPlay: () -> Unit) {
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
+        DownloadButton(episode = episode, onDownload = onDownload, onCancel = onCancelDownload)
         IconButton(onClick = onPlay) {
             Icon(Icons.Default.PlayArrow, contentDescription = "Play")
         }

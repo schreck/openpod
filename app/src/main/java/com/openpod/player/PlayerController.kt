@@ -34,7 +34,8 @@ data class PlayerState(
     val isBuffering: Boolean = false,
     val hasMedia: Boolean = false,
     val positionMs: Long = 0L,
-    val durationMs: Long = 0L
+    val durationMs: Long = 0L,
+    val isLocal: Boolean = false
 )
 
 @Singleton
@@ -125,7 +126,8 @@ class PlayerController @Inject constructor(
     }
 
     fun playEpisode(episode: Episode) {
-        _state.update { it.copy(title = episode.title, isPlaying = false, isBuffering = true, hasMedia = true) }
+        val isLocal = episode.localFilePath != null
+        _state.update { it.copy(title = episode.title, isPlaying = false, isBuffering = true, hasMedia = true, isLocal = isLocal) }
         scope.launch {
             val (savedPosition, artworkUrl) = withContext(Dispatchers.IO) {
                 val pos = episodeDao.getPlayPosition(episode.guid)
@@ -133,8 +135,9 @@ class PlayerController @Inject constructor(
                 pos to artwork
             }
             _state.update { it.copy(artworkUrl = artworkUrl) }
+            val uri = episode.localFilePath ?: episode.audioUrl
             val item = MediaItem.Builder()
-                .setUri(episode.audioUrl)
+                .setUri(uri)
                 .setMediaId(episode.guid)
                 .setMediaMetadata(MediaMetadata.Builder()
                     .setTitle(episode.title)
