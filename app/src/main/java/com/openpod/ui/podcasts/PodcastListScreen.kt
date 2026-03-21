@@ -1,5 +1,10 @@
 package com.openpod.ui.podcasts
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +19,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,7 +34,9 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
+import java.io.File
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -44,13 +53,29 @@ fun PodcastListContent(
 ) {
     val podcasts by viewModel.podcasts.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            context.contentResolver.openInputStream(it)?.use { stream ->
+                viewModel.importOpml(stream)
+            }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         AddFeedRow(
             url = viewModel.feedUrlInput,
             isLoading = viewModel.isLoading,
             onUrlChange = viewModel::onFeedUrlChange,
-            onAdd = viewModel::addPodcast
+            onAdd = viewModel::addPodcast,
+            onImport = { importLauncher.launch("*/*") },
+            onExport = {
+                scope.launch {
+                    val opml = viewModel.exportOpml()
+                    shareOpml(context, opml)
+                }
+            }
         )
         PullToRefreshBox(
             isRefreshing = viewModel.isRefreshing,
@@ -85,7 +110,9 @@ private fun AddFeedRow(
     url: String,
     isLoading: Boolean,
     onUrlChange: (String) -> Unit,
-    onAdd: () -> Unit
+    onAdd: () -> Unit,
+    onImport: () -> Unit,
+    onExport: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -106,6 +133,12 @@ private fun AddFeedRow(
         } else {
             IconButton(onClick = onAdd) {
                 Icon(Icons.Default.Add, contentDescription = "Add podcast")
+            }
+            IconButton(onClick = onImport) {
+                Icon(Icons.Default.FileUpload, contentDescription = "Import OPML")
+            }
+            IconButton(onClick = onExport) {
+                Icon(Icons.Default.FileDownload, contentDescription = "Export OPML")
             }
         }
     }
@@ -134,4 +167,18 @@ private fun PodcastItem(
         },
         modifier = Modifier.clickable { onClick() }
     )
+}
+
+private fun shareOpml(context: Context, opml: String) {
+    val file = File(context.cacheDir, "openpod-subscriptions.opml")
+    file.writeText(opml)
+    val uri = androidx.core.content.FileProvider.getUriForFile(
+        context, "${context.packageName}.fileprovider", file
+    )
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/x-opml"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(intent, "Export subscriptions"))
 }
