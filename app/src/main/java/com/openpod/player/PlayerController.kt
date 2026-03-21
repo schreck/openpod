@@ -31,6 +31,7 @@ data class PlayerState(
     val title: String? = null,
     val artworkUrl: String? = null,
     val isPlaying: Boolean = false,
+    val isBuffering: Boolean = false,
     val hasMedia: Boolean = false,
     val positionMs: Long = 0L,
     val durationMs: Long = 0L
@@ -64,11 +65,14 @@ class PlayerController @Inject constructor(
         }
         override fun onPlaybackStateChanged(playbackState: Int) {
             val c = controller ?: return
-            if (playbackState == Player.STATE_READY) {
-                _state.update { it.copy(
+            when (playbackState) {
+                Player.STATE_BUFFERING -> _state.update { it.copy(isBuffering = true) }
+                Player.STATE_READY -> _state.update { it.copy(
+                    isBuffering = false,
                     durationMs = c.duration.coerceAtLeast(0),
                     positionMs = c.currentPosition.coerceAtLeast(0)
                 )}
+                else -> _state.update { it.copy(isBuffering = false) }
             }
         }
     }
@@ -121,7 +125,7 @@ class PlayerController @Inject constructor(
     }
 
     fun playEpisode(episode: Episode) {
-        _state.update { it.copy(title = episode.title, isPlaying = true, hasMedia = true) }
+        _state.update { it.copy(title = episode.title, isPlaying = false, isBuffering = true, hasMedia = true) }
         scope.launch {
             val (savedPosition, artworkUrl) = withContext(Dispatchers.IO) {
                 val pos = episodeDao.getPlayPosition(episode.guid)
