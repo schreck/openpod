@@ -4,6 +4,7 @@ import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
+import android.util.Log
 import com.openpod.data.db.Episode
 import com.openpod.data.db.EpisodeDao
 import com.openpod.data.db.EpisodeWithPodcast
@@ -16,6 +17,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,19 +28,33 @@ data class DownloadProgress(val status: Int, val fraction: Float)
 @Singleton
 class DownloadRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val episodeDao: EpisodeDao
+    private val episodeDao: EpisodeDao,
+    private val okHttpClient: OkHttpClient
 ) {
     private val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     fun enqueue(episode: Episode) {
-        val filename = Uri.parse(episode.audioUrl).lastPathSegment ?: "${episode.guid}.audio"
-        val request = DownloadManager.Request(Uri.parse(episode.audioUrl))
-            .setTitle(episode.title)
-            .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_PODCASTS, filename)
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-        val downloadId = dm.enqueue(request)
-        scope.launch { episodeDao.updateDownloadId(episode.guid, downloadId) }
+        scope.launch {
+            val resolvedUrl = resolveUrl(episode.audioUrl)
+            val filename = Uri.parse(resolvedUrl).lastPathSegment ?: "${episode.guid}.audio"
+            val request = DownloadManager.Request(Uri.parse(resolvedUrl))
+                .setTitle(episode.title)
+                .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_PODCASTS, filename)
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            val downloadId = dm.enqueue(request)
+            episodeDao.updateDownloadId(episode.guid, downloadId)
+        }
+    }
+
+    private suspend fun resolveUrl(url: String): String = withContext(Dispatchers.IO) {
+        try {
+            val response = okHttpClient.newCall(Request.Builder().url(url).head().build()).execute()
+            response.use { it.request.url.toString() }
+        } catch (e: Exception) {
+            Log.w("DownloadRepo", "Failed to resolve redirects for $url", e)
+            url
+        }
     }
 
     fun cancel(episode: Episode) {
