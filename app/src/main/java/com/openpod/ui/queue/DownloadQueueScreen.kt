@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.openpod.data.db.EpisodeWithPodcast
 import com.openpod.data.download.DownloadProgress
+import com.openpod.data.download.STATUS_NOT_FOUND
 
 @Composable
 fun DownloadQueueContent(viewModel: DownloadQueueViewModel = hiltViewModel()) {
@@ -60,6 +61,7 @@ private fun QueueItem(ewp: EpisodeWithPodcast, downloadProgress: DownloadProgres
     val statusLabel = when (downloadProgress.status) {
         DownloadManager.STATUS_RUNNING -> "${(downloadProgress.fraction * 100).toInt()}%"
         DownloadManager.STATUS_PAUSED -> "Paused"
+        DownloadManager.STATUS_FAILED, STATUS_NOT_FOUND -> "Failed"
         else -> "Queued"
     }
     Column(modifier = Modifier.fillMaxWidth()) {
