@@ -10,6 +10,7 @@ import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaLibraryService.LibraryParams
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSession.MediaItemsWithStartPosition
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -119,6 +120,34 @@ class PlaybackService : MediaLibraryService() {
                     else -> emptyList()
                 }
                 future.set(LibraryResult.ofItemList(ImmutableList.copyOf(items), params))
+            }
+            return future
+        }
+
+        override fun onSetMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: MutableList<MediaItem>,
+            startIndex: Int,
+            startPositionMs: Long
+        ): ListenableFuture<MediaItemsWithStartPosition> {
+            val future = SettableFuture.create<MediaItemsWithStartPosition>()
+            scope.launch {
+                val resolved = mediaItems.map { item ->
+                    val ep = episodeDao.getByGuid(item.mediaId)
+                    if (ep != null) {
+                        MediaItem.Builder()
+                            .setMediaId(ep.guid)
+                            .setUri(ep.localFilePath ?: ep.audioUrl)
+                            .setMediaMetadata(MediaMetadata.Builder()
+                                .setIsBrowsable(false)
+                                .setIsPlayable(true)
+                                .setTitle(ep.title)
+                                .build())
+                            .build()
+                    } else item
+                }
+                future.set(MediaItemsWithStartPosition(resolved, startIndex, startPositionMs))
             }
             return future
         }
