@@ -1,4 +1,4 @@
-package com.openpod.ui.history
+package com.openpod.ui.downloads
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -29,35 +30,26 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.openpod.data.db.Episode
 import com.openpod.data.db.EpisodeWithPodcast
-import com.openpod.ui.common.DownloadButton
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
-fun PlayHistoryContent(
+fun DownloadsContent(
     onPlayEpisode: (Episode) -> Unit,
-    viewModel: PlayHistoryViewModel = hiltViewModel()
+    viewModel: DownloadsViewModel = hiltViewModel()
 ) {
-    val episodes by viewModel.episodes.collectAsStateWithLifecycle()
+    val downloaded by viewModel.downloaded.collectAsStateWithLifecycle()
 
-    if (episodes.isEmpty()) {
+    if (downloaded.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                text = "No history yet",
+                text = "No downloaded episodes",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     } else {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(episodes, key = { it.episode.guid }) { item ->
-                PlayHistoryItem(
-                    item = item,
-                    onPlay = { onPlayEpisode(item.episode) },
-                    onDownload = { viewModel.download(item.episode) },
-                    onCancelDownload = { viewModel.cancelDownload(item.episode) }
-                )
+            items(downloaded, key = { it.episode.guid }) { ewp ->
+                DownloadedItem(ewp = ewp, onPlay = { onPlayEpisode(ewp.episode) })
                 HorizontalDivider()
             }
         }
@@ -65,13 +57,7 @@ fun PlayHistoryContent(
 }
 
 @Composable
-private fun PlayHistoryItem(
-    item: EpisodeWithPodcast,
-    onPlay: () -> Unit,
-    onDownload: () -> Unit,
-    onCancelDownload: () -> Unit
-) {
-    val episode = item.episode
+private fun DownloadedItem(ewp: EpisodeWithPodcast, onPlay: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -79,7 +65,7 @@ private fun PlayHistoryItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
-            model = item.podcastArtworkUrl,
+            model = ewp.podcastArtworkUrl,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -92,27 +78,26 @@ private fun PlayHistoryItem(
                 .padding(horizontal = 12.dp)
         ) {
             Text(
-                text = episode.title,
+                text = ewp.episode.title,
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = listOfNotNull(item.podcastTitle, formatDate(episode.lastPlayedAt))
-                    .joinToString(" · "),
+                text = ewp.podcastTitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
-        DownloadButton(episode = episode, onDownload = onDownload, onCancel = onCancelDownload)
+        Icon(
+            Icons.Default.DownloadDone,
+            contentDescription = "Downloaded",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp).padding(end = 4.dp)
+        )
         IconButton(onClick = onPlay) {
             Icon(Icons.Default.PlayArrow, contentDescription = "Play")
         }
     }
-}
-
-private fun formatDate(timestampMs: Long): String? {
-    if (timestampMs == 0L) return null
-    return SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(timestampMs))
 }

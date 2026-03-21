@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openpod.data.db.Episode
+import com.openpod.ui.common.DownloadButton
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -61,7 +62,12 @@ fun EpisodeListScreen(
                 .padding(padding)
         ) {
             items(episodes, key = { it.guid }) { episode ->
-                EpisodeItem(episode = episode, onPlay = { onPlayEpisode(episode) })
+                EpisodeItem(
+                    episode = episode,
+                    onPlay = { onPlayEpisode(episode) },
+                    onDownload = { viewModel.download(episode) },
+                    onCancelDownload = { viewModel.cancelDownload(episode) }
+                )
                 HorizontalDivider()
             }
         }
@@ -69,7 +75,12 @@ fun EpisodeListScreen(
 }
 
 @Composable
-private fun EpisodeItem(episode: Episode, onPlay: () -> Unit) {
+private fun EpisodeItem(
+    episode: Episode,
+    onPlay: () -> Unit,
+    onDownload: () -> Unit,
+    onCancelDownload: () -> Unit
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -92,6 +103,7 @@ private fun EpisodeItem(episode: Episode, onPlay: () -> Unit) {
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
+            DownloadButton(episode = episode, onDownload = onDownload, onCancel = onCancelDownload)
             IconButton(onClick = onPlay) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Play")
             }

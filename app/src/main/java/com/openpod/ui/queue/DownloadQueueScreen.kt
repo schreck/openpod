@@ -1,5 +1,6 @@
-package com.openpod.ui.recent
+package com.openpod.ui.queue
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,7 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,49 +23,38 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.openpod.data.db.Episode
 import com.openpod.data.db.EpisodeWithPodcast
-import com.openpod.ui.common.DownloadButton
-import com.openpod.ui.episodes.parseDurationMs
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
-fun RecentEpisodesContent(
-    onPlayEpisode: (Episode) -> Unit,
-    viewModel: RecentEpisodesViewModel = hiltViewModel()
-) {
-    val episodes by viewModel.episodes.collectAsStateWithLifecycle()
+fun DownloadQueueContent(viewModel: DownloadQueueViewModel = hiltViewModel()) {
+    val queue by viewModel.queue.collectAsStateWithLifecycle()
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(episodes, key = { it.episode.guid }) { item ->
-            RecentEpisodeItem(
-                item = item,
-                onPlay = { onPlayEpisode(item.episode) },
-                onDownload = { viewModel.download(item.episode) },
-                onCancelDownload = { viewModel.cancelDownload(item.episode) }
+    if (queue.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = "No downloads in queue",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            HorizontalDivider()
+        }
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(queue, key = { it.first.episode.guid }) { (ewp, progress) ->
+                QueueItem(ewp = ewp, progress = progress, onCancel = { viewModel.cancel(ewp) })
+                HorizontalDivider()
+            }
         }
     }
 }
 
 @Composable
-private fun RecentEpisodeItem(
-    item: EpisodeWithPodcast,
-    onPlay: () -> Unit,
-    onDownload: () -> Unit,
-    onCancelDownload: () -> Unit
-) {
-    val episode = item.episode
+private fun QueueItem(ewp: EpisodeWithPodcast, progress: Float, onCancel: () -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -73,7 +63,7 @@ private fun RecentEpisodeItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
-                model = item.podcastArtworkUrl,
+                model = ewp.podcastArtworkUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -86,54 +76,26 @@ private fun RecentEpisodeItem(
                     .padding(horizontal = 12.dp)
             ) {
                 Text(
-                    text = episode.title,
+                    text = ewp.episode.title,
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = listOfNotNull(item.podcastTitle, formatDate(episode.pubDate))
-                        .joinToString(" · "),
+                    text = ewp.podcastTitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
-            DownloadButton(episode = episode, onDownload = onDownload, onCancel = onCancelDownload)
-            IconButton(onClick = onPlay) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Play")
-            }
-        }
-        val progress: Float
-        val progressColor: Color
-        when {
-            episode.isPlayed -> {
-                progress = 1f
-                progressColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            }
-            episode.playPositionMs > 0 -> {
-                val durationMs = parseDurationMs(episode.duration)
-                progress = if (durationMs != null && durationMs > 0)
-                    (episode.playPositionMs.toFloat() / durationMs).coerceIn(0f, 1f)
-                else 0f
-                progressColor = MaterialTheme.colorScheme.primary
-            }
-            else -> {
-                progress = 0f
-                progressColor = MaterialTheme.colorScheme.primary
+            IconButton(onClick = onCancel) {
+                Icon(Icons.Default.Close, contentDescription = "Cancel download")
             }
         }
         LinearProgressIndicator(
             progress = { progress },
             modifier = Modifier.fillMaxWidth().height(2.dp),
-            color = progressColor,
             trackColor = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 }
-
-private fun formatDate(pubDate: Long): String? {
-    if (pubDate == 0L) return null
-    return SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(pubDate))
-}
-

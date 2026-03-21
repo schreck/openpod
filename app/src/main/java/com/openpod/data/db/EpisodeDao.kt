@@ -43,6 +43,33 @@ interface EpisodeDao {
     @Query("UPDATE episodes SET playPositionMs = :position, isPlayed = :isPlayed, lastPlayedAt = :lastPlayedAt WHERE guid = :guid")
     suspend fun updateProgress(guid: String, position: Long, isPlayed: Boolean, lastPlayedAt: Long)
 
+    @Query("UPDATE episodes SET downloadId = :downloadId WHERE guid = :guid")
+    suspend fun updateDownloadId(guid: String, downloadId: Long)
+
+    @Query("UPDATE episodes SET localFilePath = :path, downloadId = -1 WHERE guid = :guid")
+    suspend fun completeDownload(guid: String, path: String)
+
+    @Query("""
+        SELECT episodes.*, podcasts.title as podcastTitle, podcasts.artworkUrl as podcastArtworkUrl
+        FROM episodes
+        JOIN podcasts ON episodes.podcastFeedUrl = podcasts.feedUrl
+        WHERE episodes.downloadId != -1
+        ORDER BY episodes.pubDate DESC
+    """)
+    fun getQueued(): Flow<List<EpisodeWithPodcast>>
+
+    @Query("""
+        SELECT episodes.*, podcasts.title as podcastTitle, podcasts.artworkUrl as podcastArtworkUrl
+        FROM episodes
+        JOIN podcasts ON episodes.podcastFeedUrl = podcasts.feedUrl
+        WHERE episodes.localFilePath IS NOT NULL
+        ORDER BY episodes.pubDate DESC
+    """)
+    fun getDownloaded(): Flow<List<EpisodeWithPodcast>>
+
+    @Query("SELECT * FROM episodes WHERE downloadId = :downloadId LIMIT 1")
+    suspend fun getByDownloadId(downloadId: Long): Episode?
+
     @Query("""
         SELECT episodes.*, podcasts.title as podcastTitle, podcasts.artworkUrl as podcastArtworkUrl
         FROM episodes
