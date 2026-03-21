@@ -95,30 +95,18 @@ class PlaybackService : MediaLibraryService() {
             val future = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
             scope.launch {
                 val items = when {
-                    parentId == "root" -> podcastDao.getAllOnce().map { podcast ->
+                    parentId == "root" -> episodeDao.getAllRecentOnce().map { ewp ->
                         MediaItem.Builder()
-                            .setMediaId("podcast/${podcast.feedUrl}")
+                            .setMediaId(ewp.episode.guid)
+                            .setUri(ewp.episode.localFilePath ?: ewp.episode.audioUrl)
                             .setMediaMetadata(MediaMetadata.Builder()
-                                .setIsBrowsable(true)
-                                .setIsPlayable(false)
-                                .setTitle(podcast.title)
-                                .setArtworkUri(podcast.artworkUrl?.let { Uri.parse(it) })
+                                .setIsBrowsable(false)
+                                .setIsPlayable(true)
+                                .setTitle(ewp.episode.title)
+                                .setArtist(ewp.podcastTitle)
+                                .setArtworkUri(ewp.podcastArtworkUrl?.let { Uri.parse(it) })
                                 .build())
                             .build()
-                    }
-                    parentId.startsWith("podcast/") -> {
-                        val feedUrl = parentId.removePrefix("podcast/")
-                        episodeDao.getForPodcastOnce(feedUrl).map { ep ->
-                            MediaItem.Builder()
-                                .setMediaId(ep.guid)
-                                .setUri(ep.audioUrl)
-                                .setMediaMetadata(MediaMetadata.Builder()
-                                    .setIsBrowsable(false)
-                                    .setIsPlayable(true)
-                                    .setTitle(ep.title)
-                                    .build())
-                                .build()
-                        }
                     }
                     else -> emptyList()
                 }

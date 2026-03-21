@@ -25,6 +25,15 @@ interface EpisodeDao {
     """)
     fun getAllRecent(): Flow<List<EpisodeWithPodcast>>
 
+    @Query("""
+        SELECT episodes.*, podcasts.title as podcastTitle, podcasts.artworkUrl as podcastArtworkUrl
+        FROM episodes
+        JOIN podcasts ON episodes.podcastFeedUrl = podcasts.feedUrl
+        ORDER BY episodes.pubDate DESC
+        LIMIT 100
+    """)
+    suspend fun getAllRecentOnce(): List<EpisodeWithPodcast>
+
     @Query("SELECT * FROM episodes WHERE podcastFeedUrl = :feedUrl ORDER BY pubDate DESC")
     fun getForPodcast(feedUrl: String): Flow<List<Episode>>
 
