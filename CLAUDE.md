@@ -68,11 +68,19 @@ Episodes in the DB:
 
 ## Android Auto
 
-`PlaybackService` implements `MediaLibrarySession.Callback` with a two-level browse tree: Podcasts → Episodes. Overrides `onSetMediaItems` to re-resolve the audio URI from the DB (Media3 strips URIs over IPC).
+`PlaybackService` implements `MediaLibrarySession.Callback`. Main screen shows recent episodes as a flat playable list (`getAllRecentOnce()`). Overrides `onSetMediaItems` to re-resolve the audio URI from the DB (Media3 strips URIs over IPC). Custom layout sets a skip forward 30s `CommandButton` on the now playing screen.
 
 ## Tab Order
 
 Home tabs (left to right): Recent → History → Downloads → Podcasts
+
+## Theme
+
+`OpenPodTheme` in `ui/theme/Theme.kt` — uses `dynamicDarkColorScheme` / `dynamicLightColorScheme` on Android 12+ (Material You), falls back to standard Material3 dark/light schemes. `enableEdgeToEdge()` is called in `MainActivity`. Screens using `Scaffold` get insets automatically; `PlayerScreen` uses `safeDrawingPadding()`; the root `Column` in `MainActivity` uses `navigationBarsPadding()`.
+
+## OPML
+
+`OpmlParser` and `OpmlWriter` in `data/network/` use `XmlPullParser`. `PodcastRepository.importOpml()` fetches each feed; `exportOpml()` generates XML. UI in `PodcastListScreen` uses `rememberLauncherForActivityResult` for import and `FileProvider` + share intent for export.
 
 ## Build Phases
 
@@ -82,11 +90,13 @@ Home tabs (left to right): Recent → History → Downloads → Podcasts
 4. **Playback** — ExoPlayer service, mini-player bar, seek/skip 30s ✓
 5. **Resume position** — save and restore play position per episode ✓
 6. **Full-screen player** — artwork, scrubber, time labels, skip controls ✓
-7. **Android Auto** — MediaLibraryService browse tree ✓
+7. **Android Auto** — MediaLibraryService browse tree, recent feed, skip forward ✓
 8. **Downloads** — OkHttp streaming, progress tracking, offline playback ✓
 9. **Play history** — history tab ordered by last played ✓
 10. **Feed refresh** — on app open, pull-to-refresh, Android Auto connect ✓
-11. **Remaining** — playback speed control
+11. **OPML import/export** — XmlPullParser-based, share sheet export ✓
+12. **Dark mode** — dynamic color (Material You), edge-to-edge, proper insets ✓
+13. **Remaining** — playback speed control
 
 ## Testing
 
@@ -128,6 +138,10 @@ Enable the head unit server in the Android Auto app on the phone first. DHU must
 ## Release Build
 
 R8 minification and resource shrinking are enabled for release. ProGuard rules are in `app/proguard-rules.pro`. Network security config allows cleartext HTTP for podcast feeds (`res/xml/network_security_config.xml`).
+
+## Before Merging or Making a PR
+
+Always review `README.md` and `CLAUDE.md` and update them to reflect any new features, architecture changes, screen additions, or build/config changes introduced in the branch. Docs should be current before a branch lands on main.
 
 ## Conventions
 
