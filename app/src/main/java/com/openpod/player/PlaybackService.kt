@@ -17,6 +17,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import com.openpod.data.db.EpisodeDao
 import com.openpod.data.db.PodcastDao
+import com.openpod.data.repository.PodcastRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +32,7 @@ class PlaybackService : MediaLibraryService() {
 
     @Inject lateinit var episodeDao: EpisodeDao
     @Inject lateinit var podcastDao: PodcastDao
+    @Inject lateinit var podcastRepository: PodcastRepository
 
     private lateinit var player: ExoPlayer
     private lateinit var mediaLibrarySession: MediaLibrarySession
@@ -70,6 +72,7 @@ class PlaybackService : MediaLibraryService() {
             browser: MediaSession.ControllerInfo,
             params: LibraryParams?
         ): ListenableFuture<LibraryResult<MediaItem>> {
+            scope.launch { podcastRepository.refreshAll() }
             val root = MediaItem.Builder()
                 .setMediaId("root")
                 .setMediaMetadata(MediaMetadata.Builder()

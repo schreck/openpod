@@ -28,8 +28,20 @@ class PodcastListViewModel @Inject constructor(
     var isLoading by mutableStateOf(false)
         private set
 
+    var isRefreshing by mutableStateOf(false)
+        private set
+
     var errorMessage by mutableStateOf<String?>(null)
         private set
+
+    init {
+        viewModelScope.launch { refresh() }
+    }
+
+    suspend fun refresh() {
+        isRefreshing = true
+        try { repository.refreshAll() } finally { isRefreshing = false }
+    }
 
     fun onFeedUrlChange(url: String) { feedUrlInput = url }
 

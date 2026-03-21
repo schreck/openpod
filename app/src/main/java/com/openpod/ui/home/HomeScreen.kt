@@ -41,29 +41,29 @@ fun HomeScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("Podcasts") }
+                    text = { Text("Recent") }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("Recent") }
+                    text = { Text("History") }
                 )
                 Tab(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    text = { Text("History") }
+                    text = { Text("Downloads") }
                 )
                 Tab(
                     selected = selectedTab == 3,
                     onClick = { selectedTab = 3 },
-                    text = { Text("Downloads") }
+                    text = { Text("Podcasts") }
                 )
             }
             when (selectedTab) {
-                0 -> PodcastListContent(onPodcastClick = onPodcastClick)
-                1 -> RecentEpisodesContent(onPlayEpisode = onPlayEpisode)
-                2 -> PlayHistoryContent(onPlayEpisode = onPlayEpisode)
-                3 -> DownloadsContent(onPlayEpisode = onPlayEpisode)
+                0 -> RecentEpisodesContent(onPlayEpisode = onPlayEpisode)
+                1 -> PlayHistoryContent(onPlayEpisode = onPlayEpisode)
+                2 -> DownloadsContent(onPlayEpisode = onPlayEpisode)
+                3 -> PodcastListContent(onPodcastClick = onPodcastClick)
             }
         }
     }
