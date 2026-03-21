@@ -44,7 +44,7 @@ class PlaybackService : MediaLibraryService() {
                     while (true) {
                         delay(5_000)
                         val guid = player.currentMediaItem?.mediaId ?: continue
-                        episodeDao.updateProgress(guid, player.currentPosition, false)
+                        episodeDao.updateProgress(guid, player.currentPosition, false, System.currentTimeMillis())
                     }
                 }
             } else {
@@ -56,7 +56,7 @@ class PlaybackService : MediaLibraryService() {
             if (playbackState == Player.STATE_ENDED) {
                 scope.launch {
                     val guid = player.currentMediaItem?.mediaId ?: return@launch
-                    episodeDao.updateProgress(guid, 0L, true)
+                    episodeDao.updateProgress(guid, 0L, true, System.currentTimeMillis())
                 }
             }
         }

@@ -40,6 +40,15 @@ interface EpisodeDao {
     @Query("SELECT playPositionMs FROM episodes WHERE guid = :guid")
     suspend fun getPlayPosition(guid: String): Long
 
-    @Query("UPDATE episodes SET playPositionMs = :position, isPlayed = :isPlayed WHERE guid = :guid")
-    suspend fun updateProgress(guid: String, position: Long, isPlayed: Boolean)
+    @Query("UPDATE episodes SET playPositionMs = :position, isPlayed = :isPlayed, lastPlayedAt = :lastPlayedAt WHERE guid = :guid")
+    suspend fun updateProgress(guid: String, position: Long, isPlayed: Boolean, lastPlayedAt: Long)
+
+    @Query("""
+        SELECT episodes.*, podcasts.title as podcastTitle, podcasts.artworkUrl as podcastArtworkUrl
+        FROM episodes
+        JOIN podcasts ON episodes.podcastFeedUrl = podcasts.feedUrl
+        WHERE episodes.lastPlayedAt > 0
+        ORDER BY episodes.lastPlayedAt DESC
+    """)
+    fun getPlayHistory(): Flow<List<EpisodeWithPodcast>>
 }

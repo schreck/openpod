@@ -16,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.openpod.data.db.Episode
+import com.openpod.ui.history.PlayHistoryContent
 import com.openpod.ui.podcasts.PodcastListContent
 import com.openpod.ui.recent.RecentEpisodesContent
 
@@ -46,10 +47,16 @@ fun HomeScreen(
                     onClick = { selectedTab = 1 },
                     text = { Text("Recent") }
                 )
+                Tab(
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
+                    text = { Text("History") }
+                )
             }
             when (selectedTab) {
                 0 -> PodcastListContent(onPodcastClick = onPodcastClick)
                 1 -> RecentEpisodesContent(onPlayEpisode = onPlayEpisode)
+                2 -> PlayHistoryContent(onPlayEpisode = onPlayEpisode)
             }
         }
     }
