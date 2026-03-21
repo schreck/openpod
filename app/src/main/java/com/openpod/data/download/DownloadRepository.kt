@@ -34,7 +34,7 @@ class DownloadRepository @Inject constructor(
         val request = DownloadManager.Request(Uri.parse(episode.audioUrl))
             .setTitle(episode.title)
             .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_PODCASTS, filename)
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
+            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
         val downloadId = dm.enqueue(request)
         scope.launch { episodeDao.updateDownloadId(episode.guid, downloadId) }
     }
