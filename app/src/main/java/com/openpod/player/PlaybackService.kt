@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.session.CommandButton
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
@@ -179,7 +180,13 @@ class PlaybackService : MediaLibraryService() {
             .setSeekBackIncrementMs(30_000)
             .build()
             .also { it.addListener(playerListener) }
-        mediaLibrarySession = MediaLibrarySession.Builder(this, player, libraryCallback).build()
+        val skipForward = CommandButton.Builder()
+            .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
+            .setDisplayName("Skip forward 30s")
+            .build()
+        mediaLibrarySession = MediaLibrarySession.Builder(this, player, libraryCallback)
+            .setCustomLayout(listOf(skipForward))
+            .build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession =
