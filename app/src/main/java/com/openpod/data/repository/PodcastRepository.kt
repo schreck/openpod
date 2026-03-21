@@ -5,8 +5,10 @@ import com.openpod.data.db.EpisodeDao
 import com.openpod.data.db.EpisodeWithPodcast
 import com.openpod.data.db.Podcast
 import com.openpod.data.db.PodcastDao
+import com.openpod.data.network.OpmlWriter
 import com.openpod.data.network.RssFetcher
 import com.openpod.data.network.RssParser
+import java.io.InputStream
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -68,6 +70,23 @@ class PodcastRepository @Inject constructor(
             }
         }
     }
+
+    suspend fun importOpml(input: InputStream): Pair<Int, Int> {
+        val feedUrls = com.openpod.data.network.OpmlParser.parse(input)
+        var imported = 0
+        var failed = 0
+        feedUrls.forEach { url ->
+            try {
+                addPodcast(url)
+                imported++
+            } catch (_: Exception) {
+                failed++
+            }
+        }
+        return imported to failed
+    }
+
+    suspend fun exportOpml(): String = OpmlWriter.write(podcastDao.getAllOnce())
 
     suspend fun deletePodcast(podcast: Podcast) = podcastDao.delete(podcast)
 }

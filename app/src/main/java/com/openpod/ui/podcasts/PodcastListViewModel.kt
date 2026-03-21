@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.InputStream
 import javax.inject.Inject
 
 @HiltViewModel
@@ -64,6 +65,23 @@ class PodcastListViewModel @Inject constructor(
     fun deletePodcast(podcast: Podcast) {
         viewModelScope.launch { repository.deletePodcast(podcast) }
     }
+
+    fun importOpml(input: InputStream) {
+        viewModelScope.launch {
+            isLoading = true
+            errorMessage = null
+            try {
+                val (imported, failed) = repository.importOpml(input)
+                if (failed > 0) errorMessage = "Imported $imported feeds, $failed failed"
+            } catch (e: Exception) {
+                errorMessage = "Import failed: ${e.message}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    suspend fun exportOpml(): String = repository.exportOpml()
 
     fun dismissError() { errorMessage = null }
 }
