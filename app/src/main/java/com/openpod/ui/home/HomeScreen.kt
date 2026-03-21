@@ -19,7 +19,6 @@ import com.openpod.data.db.Episode
 import com.openpod.ui.downloads.DownloadsContent
 import com.openpod.ui.history.PlayHistoryContent
 import com.openpod.ui.podcasts.PodcastListContent
-import com.openpod.ui.queue.DownloadQueueContent
 import com.openpod.ui.recent.RecentEpisodesContent
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,11 +56,6 @@ fun HomeScreen(
                 Tab(
                     selected = selectedTab == 3,
                     onClick = { selectedTab = 3 },
-                    text = { Text("Queue") }
-                )
-                Tab(
-                    selected = selectedTab == 4,
-                    onClick = { selectedTab = 4 },
                     text = { Text("Downloads") }
                 )
             }
@@ -69,8 +63,7 @@ fun HomeScreen(
                 0 -> PodcastListContent(onPodcastClick = onPodcastClick)
                 1 -> RecentEpisodesContent(onPlayEpisode = onPlayEpisode)
                 2 -> PlayHistoryContent(onPlayEpisode = onPlayEpisode)
-                3 -> DownloadQueueContent()
-                4 -> DownloadsContent(onPlayEpisode = onPlayEpisode)
+                3 -> DownloadsContent(onPlayEpisode = onPlayEpisode)
             }
         }
     }

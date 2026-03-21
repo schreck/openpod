@@ -13,6 +13,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -34,6 +35,7 @@ class DownloadRepository @Inject constructor(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _progress = MutableStateFlow<ProgressMap>(emptyMap())
+    val progress = _progress.asStateFlow()
     private val jobs = mutableMapOf<String, Job>()
 
     fun enqueue(episode: Episode) {
@@ -99,5 +101,12 @@ class DownloadRepository @Inject constructor(
             episodes.map { ewp -> ewp to (progressMap[ewp.episode.guid] ?: 0f) }
         }
 
-    fun getDownloaded(): Flow<List<EpisodeWithPodcast>> = episodeDao.getDownloaded()
+    fun delete(episode: Episode) {
+        scope.launch {
+            episode.localFilePath?.let { File(it).delete() }
+            episodeDao.clearDownload(episode.guid)
+        }
+    }
+
+    fun getAllDownloads(): Flow<List<EpisodeWithPodcast>> = episodeDao.getAllDownloads()
 }

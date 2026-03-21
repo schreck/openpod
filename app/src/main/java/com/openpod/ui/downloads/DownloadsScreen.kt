@@ -10,11 +10,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,20 +39,26 @@ fun DownloadsContent(
     onPlayEpisode: (Episode) -> Unit,
     viewModel: DownloadsViewModel = hiltViewModel()
 ) {
-    val downloaded by viewModel.downloaded.collectAsStateWithLifecycle()
+    val downloads by viewModel.downloads.collectAsStateWithLifecycle()
 
-    if (downloaded.isEmpty()) {
+    if (downloads.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                text = "No downloaded episodes",
+                text = "No downloads",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     } else {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(downloaded, key = { it.episode.guid }) { ewp ->
-                DownloadedItem(ewp = ewp, onPlay = { onPlayEpisode(ewp.episode) })
+            items(downloads, key = { it.first.episode.guid }) { (ewp, progress) ->
+                DownloadItem(
+                    ewp = ewp,
+                    progress = progress,
+                    onPlay = { onPlayEpisode(ewp.episode) },
+                    onCancel = { viewModel.cancel(ewp.episode) },
+                    onDelete = { viewModel.delete(ewp.episode) }
+                )
                 HorizontalDivider()
             }
         }
@@ -57,47 +66,79 @@ fun DownloadsContent(
 }
 
 @Composable
-private fun DownloadedItem(ewp: EpisodeWithPodcast, onPlay: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AsyncImage(
-            model = ewp.podcastArtworkUrl,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
+private fun DownloadItem(
+    ewp: EpisodeWithPodcast,
+    progress: Float?,
+    onPlay: () -> Unit,
+    onCancel: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
             modifier = Modifier
-                .size(48.dp)
-                .clip(MaterialTheme.shapes.small)
-        )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 12.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = ewp.episode.title,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+            AsyncImage(
+                model = ewp.podcastArtworkUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(MaterialTheme.shapes.small)
             )
-            Text(
-                text = ewp.podcastTitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp)
+            ) {
+                Text(
+                    text = ewp.episode.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = ewp.podcastTitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+                if (progress != null) {
+                    Text(
+                        text = "${(progress * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+            }
+            if (progress != null) {
+                IconButton(onClick = onCancel) {
+                    Icon(Icons.Default.Close, contentDescription = "Cancel download")
+                }
+            } else {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete download",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+                IconButton(onClick = onPlay) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = "Play")
+                }
+            }
         }
-        Icon(
-            Icons.Default.DownloadDone,
-            contentDescription = "Downloaded",
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp).padding(end = 4.dp)
-        )
-        IconButton(onClick = onPlay) {
-            Icon(Icons.Default.PlayArrow, contentDescription = "Play")
+        if (progress != null) {
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 8.dp)
+            )
         }
     }
 }
