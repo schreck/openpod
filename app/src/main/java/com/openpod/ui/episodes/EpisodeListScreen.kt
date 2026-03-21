@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -101,25 +102,31 @@ private fun EpisodeItem(episode: Episode, onPlay: () -> Unit) {
 
 @Composable
 private fun EpisodeProgressBar(episode: Episode) {
+    val progress: Float
+    val color: Color
     when {
-        episode.isPlayed -> LinearProgressIndicator(
-            progress = { 1f },
-            modifier = Modifier.fillMaxWidth().height(2.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-            trackColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        episode.isPlayed -> {
+            progress = 1f
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+        }
         episode.playPositionMs > 0 -> {
             val durationMs = parseDurationMs(episode.duration)
-            val progress = if (durationMs != null && durationMs > 0)
+            progress = if (durationMs != null && durationMs > 0)
                 (episode.playPositionMs.toFloat() / durationMs).coerceIn(0f, 1f)
             else 0f
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(2.dp),
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            color = MaterialTheme.colorScheme.primary
+        }
+        else -> {
+            progress = 0f
+            color = MaterialTheme.colorScheme.primary
         }
     }
+    LinearProgressIndicator(
+        progress = { progress },
+        modifier = Modifier.fillMaxWidth().height(2.dp),
+        color = color,
+        trackColor = MaterialTheme.colorScheme.surfaceVariant
+    )
 }
 
 private fun formatDate(pubDate: Long): String? {
