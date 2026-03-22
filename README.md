@@ -12,7 +12,7 @@ A simple, open-source podcast app for Android.
 - Full-screen player with artwork, scrubber, and skip controls
 - Download episodes for offline playback
 - Dark mode with dynamic color (Material You)
-- Android Auto support with skip forward 30s
+- Android Auto support
 - Feeds refresh automatically on app open and on Android Auto connect
 
 ## Stack
@@ -29,22 +29,26 @@ A simple, open-source podcast app for Android.
 Single-module MVVM app.
 
 ```
-app/
+app/src/main/java/com/openpod/
 ├── data/
-│   ├── db/          # Room entities, DAOs, database
-│   ├── download/    # DownloadRepository (OkHttp streaming, progress tracking)
-│   ├── network/     # RSS HTTP client + XML parser
-│   └── repository/  # PodcastRepository
-├── player/          # ExoPlayer service + MediaController wrapper
+│   ├── db/              # Room entities (Podcast, Episode), DAOs, AppDatabase
+│   ├── download/        # DownloadRepository — OkHttp streaming, progress tracking
+│   ├── network/         # RssFetcher, RssParser, OpmlParser, OpmlWriter
+│   └── repository/      # PodcastRepository — coordinates db + network
+├── di/                  # Hilt modules (DatabaseModule, NetworkModule)
+├── player/              # PlaybackService (MediaLibraryService), PlayerController
 ├── ui/
-│   ├── home/        # HomeScreen (tab host)
-│   ├── recent/      # Recent episodes tab
-│   ├── history/     # Play history tab
-│   ├── downloads/   # Downloads tab (in-progress + completed)
-│   ├── podcasts/    # Podcast list tab
-│   ├── episodes/    # Episode list screen
-│   └── player/      # Mini-player bar + full-screen player
-└── MainActivity.kt
+│   ├── common/          # DownloadButton
+│   ├── downloads/       # Downloads tab — DownloadsScreen, DownloadsViewModel
+│   ├── episodes/        # Episode list — EpisodeListScreen, EpisodeListViewModel, EpisodeProgress
+│   ├── history/         # Play history tab — PlayHistoryScreen, PlayHistoryViewModel
+│   ├── home/            # HomeScreen (tab host)
+│   ├── player/          # MiniPlayerBar, PlayerScreen, PlayerViewModel
+│   ├── podcasts/        # Podcast list tab — PodcastListScreen, PodcastListViewModel
+│   ├── recent/          # Recent episodes tab — RecentEpisodesScreen, RecentEpisodesViewModel
+│   └── theme/           # OpenPodTheme (Material You / dynamic color)
+├── MainActivity.kt
+└── OpenPodApplication.kt
 ```
 
 ## Screens
@@ -52,7 +56,7 @@ app/
 - **Recent** — latest 100 episodes across all feeds, pull-to-refresh
 - **History** — episodes ordered by last played
 - **Downloads** — in-progress downloads with progress bar, completed downloads with play/delete
-- **Podcasts** — subscribed feeds, add by RSS URL, pull-to-refresh
+- **Podcasts** — subscribed feeds, add by RSS URL, pull-to-refresh, OPML import/export
 - **Episode List** — episodes for a feed; progress bar shows unplayed / in-progress / finished
 - **Player** — persistent mini-player bar (tap to expand), full-screen player with artwork, scrubber, skip controls, and streaming/local indicator
 
@@ -60,17 +64,45 @@ app/
 
 Episodes can be downloaded from any episode list screen. The Downloads tab shows:
 - In-progress: progress bar, percentage, cancel button
-- Completed: DownloadDone icon, play and delete buttons
+- Completed: play and delete buttons
 
 Downloaded episodes play from the local file; all others stream. The player shows "Local file" or "Streaming" to indicate which.
 
 ## OPML
 
-Import subscriptions from any OPML file via the upload icon on the Podcasts tab. Export your subscriptions via the download icon — shares an `.opml` file via the system share sheet.
+Import subscriptions from any OPML file via the upload icon on the Podcasts tab. Export via the download icon — shares an `.opml` file through the system share sheet.
 
 ## Android Auto
 
-Supported via `MediaLibraryService`. Main screen shows recent episodes. Skip forward 30s button on the now playing screen. Feeds refresh automatically when Android Auto connects.
+OpenPod uses `MediaLibraryService` (Media3) to integrate with Android Auto. The relevant code is in `player/PlaybackService.kt`.
+
+### How it works
+
+`PlaybackService` extends `MediaLibraryService` and implements `MediaLibrarySession.Callback`. When Android Auto connects, it:
+
+1. Calls `onGetLibraryRoot` to get the browse tree root. OpenPod returns a single root node and triggers a feed refresh in the background.
+2. Calls `onGetChildren("root", ...)` to populate the main screen. OpenPod returns the 100 most recent episodes as a flat, playable list.
+3. Calls `onSetMediaItems` when the user picks an episode. OpenPod re-resolves the audio URI from the database at this point — Media3 strips URIs during IPC, so this is required for playback to work.
+
+### Audio routing
+
+ExoPlayer is configured with explicit audio attributes (`USAGE_MEDIA`, `AUDIO_CONTENT_TYPE_SPEECH`) and `handleAudioFocus = true`. This is required for the system to route audio through the car's speakers rather than the phone.
+
+### Skip forward 30s
+
+A `CommandButton` using `COMMAND_SEEK_FORWARD` is added to the session's custom layout. ExoPlayer is configured with `setSeekForwardIncrementMs(30_000)`, so the standard seek-forward command skips exactly 30 seconds.
+
+### Desktop Head Unit (local testing)
+
+```bash
+# Forward the port
+/opt/homebrew/share/android-commandlinetools/platform-tools/adb forward tcp:5277 tcp:5277
+
+# Launch the DHU (keep terminal open — it's interactive)
+/opt/homebrew/share/android-commandlinetools/extras/google/auto/desktop-head-unit
+```
+
+Enable the head unit server in the Android Auto app on the phone first. Restart the DHU after installing a new build.
 
 ## Testing
 
@@ -95,20 +127,6 @@ Check connected devices first:
 ```bash
 /opt/homebrew/share/android-commandlinetools/platform-tools/adb devices
 ```
-
-## Android Auto (Desktop Head Unit)
-
-To test Android Auto locally:
-
-```bash
-# Forward the port
-/opt/homebrew/share/android-commandlinetools/platform-tools/adb forward tcp:5277 tcp:5277
-
-# Launch the DHU (keep terminal open)
-/opt/homebrew/share/android-commandlinetools/extras/google/auto/desktop-head-unit
-```
-
-Enable the head unit server in the Android Auto app on your phone first.
 
 ## License
 
