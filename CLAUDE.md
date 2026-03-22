@@ -143,8 +143,6 @@ Signing credentials are read from `local.properties` (gitignored). Keystore is a
 
 **Every time you build an AAB, increment `versionCode` by 1 in `app/build.gradle.kts` before building.** Also update `versionName` if the user specifies one. Current version: versionCode 4, versionName 1.4.
 
-Build and copy to `C:\temp`:
-
 ```bash
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./gradlew bundleRelease && cp app/build/outputs/bundle/release/app-release.aab /mnt/c/temp/
 ```
