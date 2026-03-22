@@ -103,7 +103,7 @@ Home tabs (left to right): Recent → History → Downloads → Podcasts
 Run unit tests:
 
 ```bash
-JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew test
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./gradlew test
 ```
 
 **When to add tests:** Write unit tests for pure logic that doesn't need Android — parsing, formatting, data transformation. `RssParser` and `parseDurationMs` are the main examples. Don't test Room DAOs, Compose UI, or ExoPlayer wiring; those require instrumented tests and aren't worth the setup cost for this project.
@@ -112,10 +112,10 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew test
 
 ## Building & Installing
 
-**Java:** The system JDK is Java 8, but AGP 8.5 requires Java 11+. Use the Homebrew OpenJDK 17:
+**Java:** Use OpenJDK 17 at `/usr/lib/jvm/java-17-openjdk-amd64`:
 
 ```bash
-JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew installDebug
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./gradlew installDebug
 ```
 
 **ADB:** Not on PATH — use the full path:
@@ -138,6 +138,16 @@ Enable the head unit server in the Android Auto app on the phone first. DHU must
 ## Release Build
 
 R8 minification and resource shrinking are enabled for release. ProGuard rules are in `app/proguard-rules.pro`. Network security config allows cleartext HTTP for podcast feeds (`res/xml/network_security_config.xml`).
+
+Signing credentials are read from `local.properties` (gitignored). Keystore is at `/root/openpod-upload.jks`.
+
+**Every time you build an AAB, increment `versionCode` by 1 in `app/build.gradle.kts` before building.** Also update `versionName` if the user specifies one. Current version: versionCode 4, versionName 1.4.
+
+Build and copy to `C:\temp`:
+
+```bash
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./gradlew bundleRelease && cp app/build/outputs/bundle/release/app-release.aab /mnt/c/temp/
+```
 
 ## Before Merging or Making a PR
 
