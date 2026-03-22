@@ -33,17 +33,20 @@ app/
 ├── data/
 │   ├── db/          # Room entities, DAOs, database
 │   ├── download/    # DownloadRepository (OkHttp streaming, progress tracking)
-│   ├── network/     # RSS HTTP client + XML parser
+│   ├── network/     # RSS HTTP client + XML parser, OPML import/export
 │   └── repository/  # PodcastRepository
+├── di/              # Hilt modules
 ├── player/          # ExoPlayer service + MediaController wrapper
 ├── ui/
+│   ├── common/      # Shared composables (DownloadButton)
 │   ├── home/        # HomeScreen (tab host)
 │   ├── recent/      # Recent episodes tab
 │   ├── history/     # Play history tab
 │   ├── downloads/   # Downloads tab (in-progress + completed)
 │   ├── podcasts/    # Podcast list tab
 │   ├── episodes/    # Episode list screen
-│   └── player/      # Mini-player bar + full-screen player
+│   ├── player/      # Mini-player bar + full-screen player
+│   └── theme/       # OpenPodTheme (Material You / dynamic color)
 └── MainActivity.kt
 ```
 
@@ -75,7 +78,7 @@ Supported via `MediaLibraryService`. Main screen shows recent episodes. Skip for
 ## Testing
 
 ```bash
-JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew test
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./gradlew test
 ```
 
 Unit tests live in `app/src/test/`. Covers `RssParser` and `parseDurationMs`.
@@ -84,16 +87,16 @@ Write unit tests for pure logic only (parsing, formatting, data transformation).
 
 ## Build & Install
 
-Requires Java 11+. Use Homebrew OpenJDK 17 if the system JDK is older:
+Requires Java 11+:
 
 ```bash
-JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew installDebug
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./gradlew installDebug
 ```
 
 Check connected devices first:
 
 ```bash
-/opt/homebrew/share/android-commandlinetools/platform-tools/adb devices
+/root/android-sdk/platform-tools/adb devices
 ```
 
 ## Android Auto (Desktop Head Unit)
@@ -102,10 +105,10 @@ To test Android Auto locally:
 
 ```bash
 # Forward the port
-/opt/homebrew/share/android-commandlinetools/platform-tools/adb forward tcp:5277 tcp:5277
+/root/android-sdk/platform-tools/adb forward tcp:5277 tcp:5277
 
 # Launch the DHU (keep terminal open)
-/opt/homebrew/share/android-commandlinetools/extras/google/auto/desktop-head-unit
+/root/android-sdk/extras/google/auto/desktop-head-unit
 ```
 
 Enable the head unit server in the Android Auto app on your phone first.
