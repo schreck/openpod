@@ -38,16 +38,25 @@ class DownloadRepository @Inject constructor(
     val progress = _progress.asStateFlow()
     private val jobs = mutableMapOf<String, Job>()
 
+    init {
+        // Clear any episodes left stuck in-progress from a previous session.
+        scope.launch { episodeDao.resetStuckDownloads() }
+    }
+
     fun enqueue(episode: Episode) {
         if (jobs.containsKey(episode.guid)) return
+        // Seed progress at 0 immediately so the UI shows in-progress before the
+        // first buffer read (avoids flashing "completed" while waiting on the HTTP response).
+        _progress.update { it + (episode.guid to 0f) }
         val job = scope.launch {
-            episodeDao.updateDownloadId(episode.guid, 1L) // mark as queued
+            episodeDao.updateDownloadId(episode.guid, 1L)
             try {
                 download(episode)
-            } catch (e: Exception) {
-                episodeDao.updateDownloadId(episode.guid, -1L) // reset on failure
-            } finally {
                 _progress.update { it - episode.guid }
+            } catch (e: Exception) {
+                episodeDao.updateDownloadId(episode.guid, -1L)
+                _progress.update { it - episode.guid }
+            } finally {
                 jobs.remove(episode.guid)
             }
         }
@@ -91,6 +100,10 @@ class DownloadRepository @Inject constructor(
         jobs[episode.guid]?.cancel()
         jobs.remove(episode.guid)
         scope.launch {
+            val filename = android.net.Uri.parse(episode.audioUrl).lastPathSegment
+                ?: "${episode.guid}.audio"
+            val dir = context.getExternalFilesDir(Environment.DIRECTORY_PODCASTS) ?: context.filesDir
+            java.io.File(dir, filename).delete()
             episodeDao.updateDownloadId(episode.guid, -1L)
             _progress.update { it - episode.guid }
         }

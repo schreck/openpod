@@ -61,6 +61,9 @@ interface EpisodeDao {
     @Query("UPDATE episodes SET localFilePath = NULL, downloadId = -1 WHERE guid = :guid")
     suspend fun clearDownload(guid: String)
 
+    @Query("UPDATE episodes SET downloadId = -1 WHERE downloadId != -1 AND localFilePath IS NULL")
+    suspend fun resetStuckDownloads()
+
     @Query("""
         SELECT episodes.*, podcasts.title as podcastTitle, podcasts.artworkUrl as podcastArtworkUrl
         FROM episodes
