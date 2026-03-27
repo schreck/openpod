@@ -43,7 +43,7 @@ interface EpisodeDao {
     @Query("SELECT * FROM episodes WHERE guid = :guid LIMIT 1")
     suspend fun getByGuid(guid: String): Episode?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(episodes: List<Episode>)
 
     @Query("SELECT playPositionMs FROM episodes WHERE guid = :guid")
