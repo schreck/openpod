@@ -70,6 +70,8 @@ Episodes in the DB:
 
 `PlaybackService` implements `MediaLibrarySession.Callback`. Main screen shows recent episodes as a flat playable list (`getAllRecentOnce()`). Overrides `onSetMediaItems` to re-resolve the audio URI from the DB (Media3 strips URIs over IPC). Custom layout sets a skip forward 30s `CommandButton` on the now playing screen.
 
+**Resume position:** Android Auto uses `playFromMediaId` internally, which bypasses `onSetMediaItems` and fires `onMediaItemTransition` with `PLAYLIST_CHANGED` reason instead. Position restoration is handled in `playerListener.onMediaItemTransition` — when a new item is set, the saved position is looked up from the DB and `player.seekTo()` is called. This covers both the Auto path and acts as a fallback for the phone path.
+
 ## Tab Order
 
 Home tabs (left to right): Recent → History → Downloads → Podcasts

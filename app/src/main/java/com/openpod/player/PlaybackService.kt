@@ -64,6 +64,17 @@ class PlaybackService : MediaLibraryService() {
             }
         }
 
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED) return
+            val guid = mediaItem?.mediaId ?: return
+            scope.launch {
+                val savedPos = episodeDao.getPlayPosition(guid)
+                if (savedPos > 0) {
+                    player.seekTo(savedPos)
+                }
+            }
+        }
+
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED) {
                 scope.launch {
