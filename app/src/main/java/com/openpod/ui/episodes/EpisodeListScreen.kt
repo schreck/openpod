@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -31,6 +30,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openpod.data.db.Episode
 import com.openpod.ui.common.DownloadButton
+import com.openpod.ui.common.EpisodePlayButton
+import com.openpod.ui.player.PlayerViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -40,9 +41,11 @@ import java.util.Locale
 fun EpisodeListScreen(
     onBack: () -> Unit,
     onPlayEpisode: (Episode) -> Unit,
-    viewModel: EpisodeListViewModel = hiltViewModel()
+    viewModel: EpisodeListViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val episodes by viewModel.episodes.collectAsStateWithLifecycle()
+    val playerState by playerViewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -64,7 +67,9 @@ fun EpisodeListScreen(
             items(episodes, key = { it.guid }) { episode ->
                 EpisodeItem(
                     episode = episode,
+                    isPlaying = playerState.currentGuid == episode.guid && playerState.isPlaying,
                     onPlay = { onPlayEpisode(episode) },
+                    onPause = { playerViewModel.playPause() },
                     onDownload = { viewModel.download(episode) },
                     onCancelDownload = { viewModel.cancelDownload(episode) }
                 )
@@ -77,7 +82,9 @@ fun EpisodeListScreen(
 @Composable
 private fun EpisodeItem(
     episode: Episode,
+    isPlaying: Boolean,
     onPlay: () -> Unit,
+    onPause: () -> Unit,
     onDownload: () -> Unit,
     onCancelDownload: () -> Unit
 ) {
@@ -104,9 +111,13 @@ private fun EpisodeItem(
                 )
             }
             DownloadButton(episode = episode, onDownload = onDownload, onCancel = onCancelDownload)
-            IconButton(onClick = onPlay) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Play")
-            }
+            EpisodePlayButton(
+                isPlaying = isPlaying,
+                isPlayed = episode.isPlayed,
+                playPositionMs = episode.playPositionMs,
+                onPlay = onPlay,
+                onPause = onPause
+            )
         }
         EpisodeProgressBar(episode)
     }
