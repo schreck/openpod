@@ -103,9 +103,9 @@ class PlayerController @Inject constructor(
 
     fun connect() {
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
-        controllerFuture = MediaController.Builder(context, token).buildAsync()
-        controllerFuture!!.addListener({
-            controller = controllerFuture!!.get().also { c ->
+        val future = MediaController.Builder(context, token).buildAsync().also { controllerFuture = it }
+        future.addListener({
+            controller = future.get().also { c ->
                 c.addListener(listener)
                 _state.update { PlayerState(
                     currentGuid = c.currentMediaItem?.mediaId,
