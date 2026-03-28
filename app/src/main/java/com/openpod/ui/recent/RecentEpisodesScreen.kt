@@ -11,11 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,7 +30,9 @@ import coil.compose.AsyncImage
 import com.openpod.data.db.Episode
 import com.openpod.data.db.EpisodeWithPodcast
 import com.openpod.ui.common.DownloadButton
+import com.openpod.ui.common.EpisodePlayButton
 import com.openpod.ui.episodes.parseDurationMs
+import com.openpod.ui.player.PlayerViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -43,9 +41,11 @@ import java.util.Locale
 @Composable
 fun RecentEpisodesContent(
     onPlayEpisode: (Episode) -> Unit,
-    viewModel: RecentEpisodesViewModel = hiltViewModel()
+    viewModel: RecentEpisodesViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val episodes by viewModel.episodes.collectAsStateWithLifecycle()
+    val playerState by playerViewModel.state.collectAsStateWithLifecycle()
 
     PullToRefreshBox(
         isRefreshing = viewModel.isRefreshing,
@@ -56,7 +56,9 @@ fun RecentEpisodesContent(
             items(episodes, key = { it.episode.guid }) { item ->
                 RecentEpisodeItem(
                     item = item,
+                    isPlaying = playerState.currentGuid == item.episode.guid && playerState.isPlaying,
                     onPlay = { onPlayEpisode(item.episode) },
+                    onPause = { playerViewModel.playPause() },
                     onDownload = { viewModel.download(item.episode) },
                     onCancelDownload = { viewModel.cancelDownload(item.episode) }
                 )
@@ -69,7 +71,9 @@ fun RecentEpisodesContent(
 @Composable
 private fun RecentEpisodeItem(
     item: EpisodeWithPodcast,
+    isPlaying: Boolean,
     onPlay: () -> Unit,
+    onPause: () -> Unit,
     onDownload: () -> Unit,
     onCancelDownload: () -> Unit
 ) {
@@ -109,9 +113,13 @@ private fun RecentEpisodeItem(
                 )
             }
             DownloadButton(episode = episode, onDownload = onDownload, onCancel = onCancelDownload)
-            IconButton(onClick = onPlay) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Play")
-            }
+            EpisodePlayButton(
+                isPlaying = isPlaying,
+                isPlayed = episode.isPlayed,
+                playPositionMs = episode.playPositionMs,
+                onPlay = onPlay,
+                onPause = onPause
+            )
         }
         val progress: Float
         val progressColor: Color

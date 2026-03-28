@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DownloadDone
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,13 +32,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.openpod.data.db.Episode
 import com.openpod.data.db.EpisodeWithPodcast
+import com.openpod.ui.common.EpisodePlayButton
+import com.openpod.ui.player.PlayerViewModel
 
 @Composable
 fun DownloadsContent(
     onPlayEpisode: (Episode) -> Unit,
-    viewModel: DownloadsViewModel = hiltViewModel()
+    viewModel: DownloadsViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
+    val playerState by playerViewModel.state.collectAsStateWithLifecycle()
 
     if (downloads.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -55,7 +58,9 @@ fun DownloadsContent(
                 DownloadItem(
                     ewp = ewp,
                     progress = progress,
+                    isPlaying = playerState.currentGuid == ewp.episode.guid && playerState.isPlaying,
                     onPlay = { onPlayEpisode(ewp.episode) },
+                    onPause = { playerViewModel.playPause() },
                     onCancel = { viewModel.cancel(ewp.episode) },
                     onDelete = { viewModel.delete(ewp.episode) }
                 )
@@ -69,7 +74,9 @@ fun DownloadsContent(
 private fun DownloadItem(
     ewp: EpisodeWithPodcast,
     progress: Float?,
+    isPlaying: Boolean,
     onPlay: () -> Unit,
+    onPause: () -> Unit,
     onCancel: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -126,9 +133,13 @@ private fun DownloadItem(
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
-                IconButton(onClick = onPlay) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = "Play")
-                }
+                EpisodePlayButton(
+                    isPlaying = isPlaying,
+                    isPlayed = ewp.episode.isPlayed,
+                    playPositionMs = ewp.episode.playPositionMs,
+                    onPlay = onPlay,
+                    onPause = onPause
+                )
             }
         }
         if (progress != null) {

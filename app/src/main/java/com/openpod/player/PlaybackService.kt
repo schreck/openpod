@@ -55,6 +55,12 @@ class PlaybackService : MediaLibraryService() {
                 }
             } else {
                 saveJob?.cancel()
+                // Save immediately on pause/stop so the position isn't lost
+                // between the last periodic save and when playback stopped.
+                val guid = player.currentMediaItem?.mediaId ?: return
+                scope.launch {
+                    episodeDao.updateProgress(guid, player.currentPosition, false, System.currentTimeMillis())
+                }
             }
         }
 
