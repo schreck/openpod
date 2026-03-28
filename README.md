@@ -38,7 +38,7 @@ app/src/main/java/com/openpod/
 ├── di/                  # Hilt modules (DatabaseModule, NetworkModule)
 ├── player/              # PlaybackService (MediaLibraryService), PlayerController
 ├── ui/
-│   ├── common/          # DownloadButton
+│   ├── common/          # DownloadButton, EpisodePlayButton (shared icon logic)
 │   ├── downloads/       # Downloads tab — DownloadsScreen, DownloadsViewModel
 │   ├── episodes/        # Episode list — EpisodeListScreen, EpisodeListViewModel, EpisodeProgress
 │   ├── history/         # Play history tab — PlayHistoryScreen, PlayHistoryViewModel
@@ -110,7 +110,7 @@ Enable the head unit server in the Android Auto app on the phone first. Restart 
 JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew test
 ```
 
-Unit tests live in `app/src/test/`. Covers `RssParser` and `parseDurationMs`.
+Unit tests live in `app/src/test/`. Covers `RssParser`, `parseDurationMs`, and `episodePlayState` (play button icon state logic).
 
 Write unit tests for pure logic only (parsing, formatting, data transformation). Skip Room DAOs, Compose UI, and ExoPlayer wiring.
 

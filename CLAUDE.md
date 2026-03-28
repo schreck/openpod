@@ -38,7 +38,7 @@ app/src/main/java/com/openpod/
 │   ├── podcasts/    # PodcastListScreen, PodcastListViewModel
 │   ├── episodes/    # EpisodeListScreen, EpisodeListViewModel
 │   ├── player/      # MiniPlayerBar, PlayerScreen, PlayerViewModel
-│   └── common/      # DownloadButton
+│   └── common/      # DownloadButton, EpisodePlayButton (shared play/pause/played/in-progress icon logic)
 └── MainActivity.kt  # Single activity, NavHost
 ```
 
@@ -96,7 +96,8 @@ Home tabs (left to right): Recent → History → Downloads → Podcasts
 10. **Feed refresh** — on app open, pull-to-refresh, Android Auto connect ✓
 11. **OPML import/export** — XmlPullParser-based, share sheet export ✓
 12. **Dark mode** — dynamic color (Material You), edge-to-edge, proper insets ✓
-13. **Remaining** — playback speed control
+13. **Consistent episode UI** — shared EpisodePlayButton with play/pause/played/in-progress states across all screens ✓
+14. **Remaining** — playback speed control
 
 ## Testing
 
@@ -106,7 +107,7 @@ Run unit tests:
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./gradlew test
 ```
 
-**When to add tests:** Write unit tests for pure logic that doesn't need Android — parsing, formatting, data transformation. `RssParser` and `parseDurationMs` are the main examples. Don't test Room DAOs, Compose UI, or ExoPlayer wiring; those require instrumented tests and aren't worth the setup cost for this project.
+**When to add tests:** Write unit tests for pure logic that doesn't need Android — parsing, formatting, data transformation. `RssParser`, `parseDurationMs`, and `episodePlayState` are the main examples. Don't test Room DAOs, Compose UI, or ExoPlayer wiring; those require instrumented tests and aren't worth the setup cost for this project.
 
 **Avoid Android deps in tests:** Use `XmlPullParserFactory` instead of `android.util.Xml`, and keep XML fixture strings on a single line (or string concatenation) to avoid `trimIndent()` whitespace bugs with kxml2.
 
