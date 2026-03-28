@@ -28,6 +28,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 data class PlayerState(
+    val currentGuid: String? = null,
     val title: String? = null,
     val artworkUrl: String? = null,
     val isPlaying: Boolean = false,
@@ -60,6 +61,7 @@ class PlayerController @Inject constructor(
         }
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             _state.update { it.copy(
+                currentGuid = mediaItem?.mediaId,
                 title = mediaItem?.mediaMetadata?.title?.toString(),
                 hasMedia = mediaItem != null
             )}
@@ -106,6 +108,7 @@ class PlayerController @Inject constructor(
             controller = controllerFuture!!.get().also { c ->
                 c.addListener(listener)
                 _state.update { PlayerState(
+                    currentGuid = c.currentMediaItem?.mediaId,
                     title = c.mediaMetadata.title?.toString(),
                     isPlaying = c.isPlaying,
                     hasMedia = c.mediaItemCount > 0,
@@ -145,9 +148,8 @@ class PlayerController @Inject constructor(
                     .build())
                 .build()
             controller?.run {
-                setMediaItem(item)
+                setMediaItem(item, savedPosition)
                 prepare()
-                if (savedPosition > 0) seekTo(savedPosition)
                 play()
             }
         }
