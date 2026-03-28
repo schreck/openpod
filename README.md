@@ -82,15 +82,19 @@ OpenPod uses `MediaLibraryService` (Media3) to integrate with Android Auto. The 
 
 1. Calls `onGetLibraryRoot` to get the browse tree root. OpenPod returns a single root node and triggers a feed refresh in the background.
 2. Calls `onGetChildren("root", ...)` to populate the main screen. OpenPod returns the 100 most recent episodes as a flat, playable list.
-3. Calls `onSetMediaItems` when the user picks an episode. OpenPod re-resolves the audio URI from the database at this point — Media3 strips URIs during IPC, so this is required for playback to work.
+3. When the user picks an episode, Android Auto internally calls `playFromMediaId`, which fires `onMediaItemTransition(PLAYLIST_CHANGED)` rather than `onSetMediaItems`. The transition listener looks up the episode in the database, restores the saved play position, and updates the now-playing subtitle.
 
 ### Audio routing
 
 ExoPlayer is configured with explicit audio attributes (`USAGE_MEDIA`, `AUDIO_CONTENT_TYPE_SPEECH`) and `handleAudioFocus = true`. This is required for the system to route audio through the car's speakers rather than the phone.
 
-### Skip forward 30s
+### Skip ±30s
 
-A `CommandButton` using `COMMAND_SEEK_FORWARD` is added to the session's custom layout. ExoPlayer is configured with `setSeekForwardIncrementMs(30_000)`, so the standard seek-forward command skips exactly 30 seconds.
+Android Auto's now-playing screen has three transport control slots (previous / play-pause / next). OpenPod remaps those slots to skip ±30 seconds using a `ForwardingPlayer` that wraps ExoPlayer and overrides `seekToNextMediaItem` / `seekToPreviousMediaItem` to call `seekTo(currentPosition ± increment)` instead. ExoPlayer is configured with `setSeekForwardIncrementMs(30_000)` and `setSeekBackIncrementMs(30_000)`.
+
+### Now-playing subtitle
+
+The subtitle line below the episode title shows real-time playback status: **Streaming** (network playback), **Local file** (downloaded episode), or **Buffering…** (waiting for network). It is updated by calling `player.replaceMediaItem()` with new `MediaMetadata` whenever the state changes.
 
 ### Desktop Head Unit (local testing)
 
