@@ -38,7 +38,7 @@ app/src/main/java/com/openpod/
 │   ├── podcasts/    # PodcastListScreen, PodcastListViewModel
 │   ├── episodes/    # EpisodeListScreen, EpisodeListViewModel
 │   ├── player/      # MiniPlayerBar, PlayerScreen, PlayerViewModel
-│   └── common/      # DownloadButton
+│   └── common/      # DownloadButton, EpisodePlayButton (shared play/pause/played/in-progress icon logic)
 └── MainActivity.kt  # Single activity, NavHost
 ```
 
@@ -68,7 +68,13 @@ Episodes in the DB:
 
 ## Android Auto
 
-`PlaybackService` implements `MediaLibrarySession.Callback`. Main screen shows recent episodes as a flat playable list (`getAllRecentOnce()`). Overrides `onSetMediaItems` to re-resolve the audio URI from the DB (Media3 strips URIs over IPC). Custom layout sets a skip forward 30s `CommandButton` on the now playing screen.
+`PlaybackService` implements `MediaLibrarySession.Callback`. Main screen shows recent episodes as a flat playable list (`getAllRecentOnce()`). Overrides `onSetMediaItems` to re-resolve the audio URI from the DB (Media3 strips URIs over IPC).
+
+**Transport controls:** ExoPlayer is wrapped in a `ForwardingPlayer` that advertises `COMMAND_SEEK_TO_NEXT/PREVIOUS_MEDIA_ITEM` as available and maps them to ±30s seeks. This puts skip buttons in the standard left/right transport control slots in Auto (rather than a secondary custom actions area).
+
+**Resume position:** Android Auto uses `playFromMediaId` internally, which bypasses `onSetMediaItems` and fires `onMediaItemTransition` with `PLAYLIST_CHANGED` reason instead. Position restoration is handled in `playerListener.onMediaItemTransition` — when a new item is set, the saved position is looked up from the DB and `player.seekTo()` is called. A `currentPosition < 1s` guard prevents re-seeking when metadata-only updates trigger the same callback.
+
+**Now-playing subtitle:** `playerListener` tracks whether the current episode is local or streaming (`currentIsLocal`), and calls `player.replaceMediaItem()` to update `MediaMetadata.subtitle` dynamically. Shows "Local file", "Streaming", or "Buffering…" based on playback state.
 
 ## Tab Order
 
@@ -96,7 +102,8 @@ Home tabs (left to right): Recent → History → Downloads → Podcasts
 10. **Feed refresh** — on app open, pull-to-refresh, Android Auto connect ✓
 11. **OPML import/export** — XmlPullParser-based, share sheet export ✓
 12. **Dark mode** — dynamic color (Material You), edge-to-edge, proper insets ✓
-13. **Remaining** — playback speed control
+13. **Consistent episode UI** — shared EpisodePlayButton with play/pause/played/in-progress states across all screens ✓
+14. **Remaining** — playback speed control
 
 ## Testing
 
@@ -106,7 +113,7 @@ Run unit tests:
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./gradlew test
 ```
 
-**When to add tests:** Write unit tests for pure logic that doesn't need Android — parsing, formatting, data transformation. `RssParser` and `parseDurationMs` are the main examples. Don't test Room DAOs, Compose UI, or ExoPlayer wiring; those require instrumented tests and aren't worth the setup cost for this project.
+**When to add tests:** Write unit tests for pure logic that doesn't need Android — parsing, formatting, data transformation. `RssParser`, `parseDurationMs`, and `episodePlayState` are the main examples. Don't test Room DAOs, Compose UI, or ExoPlayer wiring; those require instrumented tests and aren't worth the setup cost for this project.
 
 **Avoid Android deps in tests:** Use `XmlPullParserFactory` instead of `android.util.Xml`, and keep XML fixture strings on a single line (or string concatenation) to avoid `trimIndent()` whitespace bugs with kxml2.
 

@@ -17,11 +17,14 @@ android {
     compileSdk = 35
 
     signingConfigs {
-        create("release") {
-            storeFile = file(localProps["storeFile"] as String)
-            storePassword = localProps["storePassword"] as String
-            keyAlias = localProps["keyAlias"] as String
-            keyPassword = localProps["keyPassword"] as String
+        val keystorePath = localProps["KEYSTORE_PATH"] as? String
+        if (keystorePath != null) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = localProps["KEYSTORE_PASSWORD"] as String
+                keyAlias = localProps["KEY_ALIAS"] as String
+                keyPassword = localProps["KEY_PASSWORD"] as String
+            }
         }
     }
 
@@ -35,7 +38,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
