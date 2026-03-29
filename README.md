@@ -81,8 +81,12 @@ OpenPod uses `MediaLibraryService` (Media3) to integrate with Android Auto. The 
 `PlaybackService` extends `MediaLibraryService` and implements `MediaLibrarySession.Callback`. When Android Auto connects, it:
 
 1. Calls `onGetLibraryRoot` to get the browse tree root. OpenPod returns a single root node and triggers a feed refresh in the background.
-2. Calls `onGetChildren("root", ...)` to populate the main screen. OpenPod returns the 100 most recent episodes as a flat, playable list.
+2. Calls `onGetChildren("root", ...)` to populate the main screen. OpenPod returns two browsable folders: **Recent** (100 most recent episodes) and **Downloads** (locally saved episodes). Artwork is omitted from list items to keep rows compact.
 3. When the user picks an episode, Android Auto internally calls `playFromMediaId`, which fires `onMediaItemTransition(PLAYLIST_CHANGED)` rather than `onSetMediaItems`. The transition listener looks up the episode in the database, restores the saved play position, and updates the now-playing subtitle.
+
+### Playback resumption
+
+`onPlaybackResumption` is implemented so Android Auto automatically resumes the last-played episode at the saved position when reconnecting (e.g. getting back in the car). No user interaction required.
 
 ### Audio routing
 

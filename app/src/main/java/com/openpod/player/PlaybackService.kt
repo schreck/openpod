@@ -19,6 +19,7 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import com.openpod.data.db.EpisodeDao
+import com.openpod.data.db.EpisodeWithPodcast
 import com.openpod.data.db.PodcastDao
 import com.openpod.data.repository.PodcastRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -131,20 +132,27 @@ class PlaybackService : MediaLibraryService() {
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
             val future = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
             scope.launch {
-                val items = when {
-                    parentId == "root" -> episodeDao.getAllRecentOnce().map { ewp ->
+                val items = when (parentId) {
+                    "root" -> listOf(
                         MediaItem.Builder()
-                            .setMediaId(ewp.episode.guid)
-                            .setUri(ewp.episode.localFilePath ?: ewp.episode.audioUrl)
+                            .setMediaId("recent")
                             .setMediaMetadata(MediaMetadata.Builder()
-                                .setIsBrowsable(false)
-                                .setIsPlayable(true)
-                                .setTitle(ewp.episode.title)
-                                .setArtist(ewp.podcastTitle)
-                                .setArtworkUri(ewp.podcastArtworkUrl?.let { Uri.parse(it) })
+                                .setIsBrowsable(true)
+                                .setIsPlayable(false)
+                                .setTitle("Recent")
+                                .build())
+                            .build(),
+                        MediaItem.Builder()
+                            .setMediaId("downloads")
+                            .setMediaMetadata(MediaMetadata.Builder()
+                                .setIsBrowsable(true)
+                                .setIsPlayable(false)
+                                .setTitle("Downloads")
                                 .build())
                             .build()
-                    }
+                    )
+                    "recent" -> episodeDao.getAllRecentOnce().map { ewp -> ewp.toMediaItem() }
+                    "downloads" -> episodeDao.getCompletedDownloadsOnce().map { ewp -> ewp.toMediaItem() }
                     else -> emptyList()
                 }
                 future.set(LibraryResult.ofItemList(ImmutableList.copyOf(items), params))
@@ -254,3 +262,15 @@ class PlaybackService : MediaLibraryService() {
         super.onDestroy()
     }
 }
+
+private fun EpisodeWithPodcast.toMediaItem(): MediaItem =
+    MediaItem.Builder()
+        .setMediaId(episode.guid)
+        .setUri(episode.localFilePath ?: episode.audioUrl)
+        .setMediaMetadata(MediaMetadata.Builder()
+            .setIsBrowsable(false)
+            .setIsPlayable(true)
+            .setTitle(episode.title)
+            .setArtist(podcastTitle)
+            .build())
+        .build()

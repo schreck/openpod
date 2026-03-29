@@ -68,7 +68,9 @@ Episodes in the DB:
 
 ## Android Auto
 
-`PlaybackService` implements `MediaLibrarySession.Callback`. Main screen shows recent episodes as a flat playable list (`getAllRecentOnce()`). Overrides `onSetMediaItems` to re-resolve the audio URI from the DB (Media3 strips URIs over IPC).
+`PlaybackService` implements `MediaLibrarySession.Callback`. The browse tree has two folders at root: **Recent** (100 most recent episodes via `getAllRecentOnce()`) and **Downloads** (locally saved episodes via `getCompletedDownloadsOnce()`). Artwork is omitted from browse items to keep rows compact and show more episodes on screen. Overrides `onSetMediaItems` to re-resolve the audio URI from the DB (Media3 strips URIs over IPC).
+
+**Playback resumption:** `onPlaybackResumption` is implemented — when Android Auto reconnects (e.g. getting back in the car), it automatically resumes the last-played episode at the saved position (`getMostRecentlyPlayed()` queries by `lastPlayedAt DESC`).
 
 **Transport controls:** ExoPlayer is wrapped in a `ForwardingPlayer` that advertises `COMMAND_SEEK_TO_NEXT/PREVIOUS_MEDIA_ITEM` as available and maps them to ±30s seeks. This puts skip buttons in the standard left/right transport control slots in Auto (rather than a secondary custom actions area).
 
@@ -148,7 +150,7 @@ R8 minification and resource shrinking are enabled for release. ProGuard rules a
 
 Signing credentials are read from `local.properties` (gitignored). Keystore is at `/root/openpod-upload.jks`.
 
-**Every time you build an AAB, increment both `versionCode` by 1 and the patch segment of `versionName` (e.g. 1.4 → 1.5) in `app/build.gradle.kts` before building.** Current version: versionCode 7, versionName 1.4.
+**Every time you build an AAB, increment both `versionCode` by 1 and the patch segment of `versionName` (e.g. 1.4 → 1.5) in `app/build.gradle.kts` before building.** Current version: versionCode 8, versionName 1.4.
 
 ```bash
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./gradlew bundleRelease && cp app/build/outputs/bundle/release/app-release.aab /mnt/c/temp/

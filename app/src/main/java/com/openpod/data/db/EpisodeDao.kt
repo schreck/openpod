@@ -93,4 +93,13 @@ interface EpisodeDao {
         ORDER BY episodes.lastPlayedAt DESC
     """)
     fun getPlayHistory(): Flow<List<EpisodeWithPodcast>>
+
+    @Query("""
+        SELECT episodes.*, podcasts.title as podcastTitle, podcasts.artworkUrl as podcastArtworkUrl
+        FROM episodes
+        JOIN podcasts ON episodes.podcastFeedUrl = podcasts.feedUrl
+        WHERE episodes.localFilePath IS NOT NULL
+        ORDER BY episodes.pubDate DESC
+    """)
+    suspend fun getCompletedDownloadsOnce(): List<EpisodeWithPodcast>
 }
