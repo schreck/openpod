@@ -150,7 +150,7 @@ R8 minification and resource shrinking are enabled for release. ProGuard rules a
 
 Signing credentials are read from `local.properties` (gitignored). Keystore is at `/root/openpod-upload.jks`.
 
-**Every time you build an AAB, increment both `versionCode` by 1 and the patch segment of `versionName` (e.g. 1.4 → 1.5) in `app/build.gradle.kts` before building.** Current version: versionCode 8, versionName 1.4.
+**Every time you build an AAB, increment both `versionCode` by 1 and the patch segment of `versionName` (e.g. 1.4 → 1.5) in `app/build.gradle.kts` before building.** Current version: versionCode 9, versionName 1.5.
 
 ```bash
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./gradlew bundleRelease && cp app/build/outputs/bundle/release/app-release.aab /mnt/c/temp/
