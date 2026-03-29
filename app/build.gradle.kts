@@ -32,7 +32,7 @@ android {
         applicationId = "com.openpod"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
+        versionCode = 7
         versionName = "1.4"
     }
 
