@@ -110,7 +110,11 @@ class PlaybackService : MediaLibraryService() {
             browser: MediaSession.ControllerInfo,
             params: LibraryParams?
         ): ListenableFuture<LibraryResult<MediaItem>> {
-            scope.launch { podcastRepository.refreshAll() }
+            scope.launch {
+                podcastRepository.refreshAll()
+                mediaLibrarySession.notifyChildrenChanged("recent", Int.MAX_VALUE, null)
+                mediaLibrarySession.notifyChildrenChanged("downloads", Int.MAX_VALUE, null)
+            }
             val root = MediaItem.Builder()
                 .setMediaId("root")
                 .setMediaMetadata(MediaMetadata.Builder()

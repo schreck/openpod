@@ -27,6 +27,8 @@ class RecentEpisodesViewModel @Inject constructor(
     var isRefreshing by mutableStateOf(false)
         private set
 
+    init { refresh() }
+
     fun refresh() {
         viewModelScope.launch {
             isRefreshing = true
